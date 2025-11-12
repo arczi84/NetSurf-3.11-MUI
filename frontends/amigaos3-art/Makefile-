@@ -1,0 +1,302 @@
+# ----------------------------------------------------------------------------
+# Amigaos3 target setup
+# ----------------------------------------------------------------------------
+
+#CFLAGS += -DVERSION=$(VERSION)
+
+CFLAGS += -std=c99 -s -O3 -DPATH_MAX=1024 -D__m68k__ -m68020-60 -fomit-frame-pointer \
+	  -Dnsframebuffer -Dsmall
+
+CFLAGS += -DWITH_NSLOG
+
+override  NETSURF_FB_FONTPATH="PROGDIR:Fonts"
+CFLAGS += '-DNETSURF_FB_RESPATH="$(NETSURF_FB_RESPATH)"'
+#NETSURF_STRIP_BINARY=YES
+RTG := YES
+DEBUG_BUILD	:=	NO
+TTF 		:=  YES
+
+ifeq ($(JS),YES)
+override	NETSURF_USE_DUKTAPE := YES
+CFLAGS += -DJS
+else
+override	NETSURF_USE_DUKTAPE := NO
+endif
+
+NETSURF_USE_OPENSSL := NO
+NETSURF_USE_AMISSL := YES
+
+ifeq ($(NO_MUI),)
+CFLAGS  += -DNO_INLINE_STDARG
+LDFLAGS += -lmui 
+else
+CFLAGS += -DNO_MUI
+endif
+
+$(eval $(call feature_enabled,PNG,-DWITH_PNG,,PNG (libpng)  ))
+$(eval $(call feature_enabled,GIF,-DWITH_GIF,,GIF (libnsgif)  ))
+$(eval $(call feature_enabled,BMP,-DWITH_BMP,,BMP (libnsbmp)  ))
+$(eval $(call feature_switch,JPEG,JPEG (libjpeg),-DWITH_JPEG,-ljpeg,-UWITH_JPEG,))
+#$(eval $(call pkg_config_find_and_add_enabled,FREETYPE2,freetype2,freetype2))
+
+
+CFLAGS +=   -D__clib2__   -DBOX_NORMALISE_DEBUG
+CFLAGS +=  -Dnsamigaos3 -Dnsframebuffer  \
+		-Dsmall	-D__AMIGA__  -D__m68k__ -D__BIG_ENDIAN_BGRA__ \
+		-DWITH_AMISSL  -D__NO_NET_API -D__NO_NETINCLUDE_ERRNO
+		#-DWITH_OPENSSL
+		#-DENABLE_24_BPP 
+		
+
+CFLAGS += -I/mnt/e/opt/netsurf/share-311/include  \
+			-I/mnt/g/opt/netsurf/content/handlers-  \
+			-I/mnt/e/usr/local/amiga/m68k-amigaos/clib/env/include- \
+			-I/mnt/e/usr/local/amiga/m68k-amigaos/clib/extra/include \
+			-I/mnt/e/usr/local/amiga/m68k-amigaos/clib/include \
+			-I/mnt/e/usr/local/amiga/m68k-amigaos/clib/cross/m68k-unknown-amigaos/include- \
+			-I/mnt/e/usr/local/amiga/m68k-amigaos/clib/env/netinclude \
+			
+	LDFLAGS += -L/mnt/e/usr/local/amiga/m68k-amigaos/clib/cross/m68k-unknown-amigaos/lib-	 
+	LDFLAGS += -L/mnt/e/usr/local/amiga/m68k-amigaos/clib/env/lib-
+	LDFLAGS += -L/mnt/e/usr/local/amiga/m68k-amigaos/clib/extra/lib
+	LDFLAGS += -L/mnt/e/opt/netsurf/share-311/lib---
+	LDFLAGS += -L/mnt/e/usr/local/amiga/m68k-amigaos/clib/lib-
+
+
+CFLAGS += -std=c99   -DPATH_MAX=1024
+	
+LDFLAGS += -lutf8proc -lnsutils -lft2
+
+
+#LDFLAGS += -Wl,--whole-archive -ldom -Wl,--no-whole-archive -lexpat -lhubbub
+LDFLAGS += -lcss -lnsgif -lnsbmp 
+LDFLAGS += -lcurl -lamisslstubs -lamisslauto  -lparserutils -lpng16
+LDFLAGS += -lwapcaplet  -liconv  -lz
+
+
+LDFLAGS += -ltre -lpbl
+CFLAGS += 	-DENABLE_DOWNLOAD
+ifeq ($(RTG),YES)
+LDFLAGS +=  -lSDL
+else
+	ifeq ($(USE_TIMER),YES)
+		LDFLAGS +=  -lSDL-AGA c2p8_040_asm.o c2p8_040_dbl_asm.o
+	else
+		LDFLAGS +=  -lSDL-AGA c2p8_040_asm.o c2p8_040_dbl_asm.o  -lclib0 
+	endif
+endif  ## RTG SDL_systimer.go
+
+LDFLAGS += -lm -lc -lamiga2 -lnet 
+
+ifeq ($(NETSURF_USE_DUKTAPE), YES)
+CFLAGS += -DJS
+endif
+
+ifeq ($(DEBUG_BUILD),YES)
+	LDFLAGS +=  -ltheme-o  -lthrobber 
+endif
+
+LDFLAGS += -L./lib -ltheme -ldebug 
+
+
+CFLAGS+=-DFB_USE_FREETYPE
+NETSURF_USE_FREETYPE2 := YES
+# ----------------------------------------------------------------------------
+# Source file setup
+# ----------------------------------------------------------------------------
+
+# Amiga sources 
+ifeq ($(DEBUG_BUILD),YES)
+S_AMIGAOS3 :=  gui-fb.c
+else
+S_AMIGAOS3 :=  gui.c
+endif
+
+S_AMIGAOS3 +=  framebuffer.c misc.c  utf8.c  loadpng.c
+S_AMIGAOS3 +=  ami_clipboard.c clipboard.c version.c #useragent.c 
+
+#ifeq ($(findstring clib2,$(HOST)),clib2)
+#S_AMIGAOS3 += clib2/clib2.c 
+#clib2/nofpu.c 
+#endif
+
+# FRAMEBUFFER sources 
+S_FRAMEBUFFER :=   local_history.c bitmap.c schedule.c  corewindow.c
+
+S_AMIGAOS3 += fetch.c findfile.c conv.c check_version.c
+
+ifeq ($(NO_MUI),)
+S_AMIGAOS3 += mui/gui_optionsInit.c mui/gui_options.c mui/gui_locale.c mui/gui_url.c mui/gui_urlInit.c
+S_AMIGAOS3 += mui/downloadInit.c mui/download.c
+endif
+
+S_FRAMEBUFFER_FBTK +=  fbtk.c fill.c user.c window.c
+
+ifeq ($(DEBUG_BUILD),YES)
+	S_FRAMEBUFFER_FBTK += event.c  text.c bitmap.c ../../amigaos3-art/fbtk/scroll.c
+else
+	S_AMIGAOS3_FBTK := event.c text.c bitmap.c scroll.c 
+endif
+
+S_LIBNSFB_PLOT := api.c util.c generic.c 32bpp-xbgr8888.c 32bpp-xrgb8888.c 16bpp.c 8bpp.c #24bpp.c 
+S_LIBNSFB_SURFACE := surface.c ram.c sdl.c
+S_LIBNSFB := libnsfb.c dump.c cursor.c palette.c
+
+S_AMIGAOS3  += font_freetype.c font_internal.c
+
+ifeq ($(RTG),YES)
+S_LIBNSFB_SURFACE +=  getpixel.c
+endif
+
+S_FRAMEBUFFER := $(addprefix frontends/framebuffer/,$(S_FRAMEBUFFER)) $(addprefix frontends/framebuffer/fbtk/,$(S_FRAMEBUFFER_FBTK)) 
+S_AMIGAOS3 :=	$(addprefix frontends/amigaos3-art/,$(S_AMIGAOS3)) $(addprefix frontends/amigaos3-art/fbtk/,$(S_AMIGAOS3_FBTK))
+S_LIBNSFB :=  $(addprefix frontends/amigaos3-art/libnsfb/,$(S_LIBNSFB))  $(addprefix frontends/amigaos3-art/libnsfb/plot/,$(S_LIBNSFB_PLOT))  \
+							$(addprefix frontends/amigaos3-art/libnsfb/surface/,$(S_LIBNSFB_SURFACE))  
+
+S_AMIGA_FB :=  $(S_FRAMEBUFFER) $(S_AMIGAOS3) $(S_LIBNSFB)
+
+# This is the final source build list
+# Note this is deliberately *not* expanded here as common and image
+#   are not yet available
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_AMIGA_FB) $(S_IMAGES) $(S_FONTS)
+
+ifeq ($(findstring aga,$(HOST)),aga)
+	ifeq ($(AGA),685)
+		PARAM1="-AGA"
+	else
+		PARAM1="-AGAlq"
+	endif
+endif
+
+ifeq ($(NETSURF_USE_DUKTAPE),YES)
+		PARAM4=-js
+endif
+
+ifeq ($(DEBUG),YES)
+	PARAM5="-debug"
+endif
+
+ifeq ($(USE_FPU),NO)
+	PARAM7="-nofpu"
+endif
+	
+PARAMS:=$(PARAM1)$(PARAM2)$(PARAM3)$(PARAM4)$(PARAM5)$(PARAM6)$(PARAM7)
+EXETARGET:=NetSurf$(PARAMS)
+
+CFLAGS+= -DPARAMS='$(PARAMS)'
+
+
+NETSURF_FRAMEBUFFER_RESOURCE_LIST := adblock.css credits.html	\
+ 	default.css internal.css licence.html netsurf.png quirks.css \
+	 welcome.html maps.html Messages
+
+echo:
+	echo $(DEPROOT)
+	
+# The filter and target for split messages
+MESSAGES_FILTER=ami
+
+# ----------------------------------------------------------------------------
+# Install target
+# ----------------------------------------------------------------------------
+
+install-amiga:
+
+# ----------------------------------------------------------------------------
+# Package target
+# ----------------------------------------------------------------------------
+
+package: netsurf-m68k.lha
+package-amikit: netsurf-amikit.lha
+package-aga: netsurf-m68k-aga.lha
+
+AMIGA_LANGUAGES := de en it ja nl pl
+AMIGA_PLATFORM_RESOURCES := Themes Icons default.css default.css.info favicon.png LangNames Resource.map splash.png bookmarks.htm Options
+AMIGA_PLATFORM_RESOURCES_AK := Themes Icons default.css default.css.info favicon.png LangNames Resource.map splash.png bookmarks.htm Options-AK
+AMIGA_GENERIC_RESOURCES := $(AMIGA_LANGUAGES) ca-bundle 
+AMIGA_RESOURCES := $(addprefix frontends/amigaos3-art/resources/,$(AMIGA_PLATFORM_RESOURCES)) $(addprefix frontends/amigaos3-art/resources/,$(AMIGA_GENERIC_RESOURCES))
+AMIGA_RESOURCES_AK := $(addprefix frontends/amigaos3-art/resources/,$(AMIGA_PLATFORM_RESOURCES_AK)) $(addprefix frontends/amigaos3-art/resources/,$(AMIGA_GENERIC_RESOURCES))
+AMIGA_DISTRIBUTION_FILES := frontends/amigaos3-art/dist/*
+AMIGA_INSTALL_TARGET_DIR := NetSurf_Amiga
+
+netsurf-m68k.lha: $(EXETARGET)
+
+	$(VQ)echo Creating netsurf-m68k.lha
+	$(Q)rm -rf $(AMIGA_INSTALL_TARGET_DIR)
+	$(Q)mkdir -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp -p NetSurf $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/NetSurf
+	$(Q)cp -p NetSurf-AGA $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/NetSurf-AGA	
+	$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)cp -r $(AMIGA_RESOURCES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)cp -r $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp \../netsurf-up/netsurf/resources/adBlock.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
+	$(Q)cp \../netsurf-up/netsurf/resources/default.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/default.css
+	$(Q)cp \../netsurf-up/netsurf/resources/internal.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/internal.css
+	$(Q)cp \../netsurf-up/netsurf/resources/quirks.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/quirks.css
+	$(Q)cp \../netsurf-up/netsurf/resources/netsurf.png $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/netsurf.png
+	$(Q)cp frontends/amigaos3-art/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
+	chmod 777 NetSurf_Amiga *.* -R
+	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
+	  lha a netsurf-m68k.lha NetSurf NetSurf.info
+	
+upload:
+	$(VQ)echo Uploading...
+	$(Q)cp $(AMIGA_INSTALL_TARGET_DIR)/netsurf-m68k.lha "b:\dropbox\netsurf\3.6\"
+	$(Q)date > "b:\dropbox\netsurf\wip\version.txt"
+
+netsurf-m68k-aga.lha: $(EXETARGET)
+
+	$(VQ)echo Creating netsurf-m68k-aga.lha
+	$(Q)rm -rf $(AMIGA_INSTALL_TARGET_DIR)
+	$(Q)mkdir -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp -p NetSurf-AGA-nojs $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/NetSurf-fpu
+	$(Q)cp -p NetSurf-AGA $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/NetSurf
+	$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)cp -r $(AMIGA_RESOURCES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)cp -r $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp \../netsurf-up/netsurf/resources/AdBlock.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
+	$(Q)cp \../netsurf-up/netsurf/resources/default.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/default.css
+	$(Q)cp \../netsurf-up/netsurf/resources/internal.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/internal.css
+	$(Q)cp \../netsurf-up/netsurf/resources/Quirks.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/quirks.css
+	$(Q)cp \../netsurf-up/netsurf/resources/netsurf.png $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/netsurf.png
+	$(Q)cp frontends/amigaos3-art/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
+	chmod 777 NetSurf_Amiga *.* -R
+	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
+	  lha a netsurf-m68k-aga.lha NetSurf NetSurf.info
+	
+upload-aga:
+	$(VQ)echo Uploading...
+	$(Q)cp $(AMIGA_INSTALL_TARGET_DIR)/netsurf-m68k-aga.lha "b:\dropbox\netsurf\3.6\wip"
+	$(Q)date > "b:\dropbox\netsurf\wip\version.txt"
+
+
+netsurf-amikit.lha: $(EXETARGET)
+
+	$(VQ)echo Creating netsurf-amikit.lha
+	$(Q)rm -rf $(AMIGA_INSTALL_TARGET_DIR)
+	$(Q)mkdir -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp -p NetSurf $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)cp -r $(AMIGA_RESOURCES_AK) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)cp -r $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp \../netsurf-up/netsurf/resources/AdBlock.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
+	$(Q)cp \../netsurf-up/netsurf/resources/default.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/default.css
+	$(Q)cp \../netsurf-up/netsurf/resources/internal.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/internal.css
+	$(Q)cp \../netsurf-up/netsurf/resources/Quirks.css $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/quirks.css
+	$(Q)cp \../netsurf-up/netsurf/resources/netsurf.png $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/netsurf.png
+	$(Q)cp frontends/amigaos3-art/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
+	$(Q)cp -f frontends/amigaos3-art/pkg/ak/*.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/
+
+	chmod 777 Netsurf_Amiga *.* -R
+	mv $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/Options-AK $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/Options
+	rm -R $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/C
+	rm $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/NetSurf-AGA.info
+	rm -R $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
+	
+	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
+	  lha a netsurf-amikit.lha NetSurf NetSurf.info
+
+upload-amikit:
+	$(VQ)echo Uploading...
+	$(Q)cp $(AMIGA_INSTALL_TARGET_DIR)/netsurf-amikit.lha "b:\dropbox\netsurf\amikit"
+	$(Q)date > "b:\dropbox\netsurf\wip\version.txt"

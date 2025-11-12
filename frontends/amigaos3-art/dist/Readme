@@ -1,0 +1,109 @@
+
+NetSurf CSS capable web browser for AmigaOS 3.x ported by Artur Jarosik
+
+Version:      3.11  (11.06.2025)
+
+Original authors: NetSurf contributors 
+Email:  arturjarosik gmail/com
+
+NetSurf is the only CSS capable web browser on AmigaOS 3.x also available
+for many other platforms including RiscOS, Linux, Haiku and Atari.
+It is based on sdl framebuffer frontend but adds more functions to GUI.
+The 68k code is not related to NetSurf for OS4 and is not representative of 
+the user interface of NetSurf on any other platform.
+
+Please report any bugs or requests to my e-mail. Any feedback is appreciated.
+NetSurf 68k homepage: http://ami-soft.blogspot.com
+You can get older versions here if current one isn't working 
+or get latest for testing.
+
+68k sources  http://netsurf.baderman.net/netsurf-sdl-68k-src.zip
+Original sources  http://git.netsurf-browser.org/
+There is official m68k toolchain available for building netsurf on linux:
+http://ci.netsurf-browser.org/builds/toolchains
+
+If you had any problem with compiling sources 
+please contact with me, I will surely help. 
+
+ Requirements:
+ =============
+
+  * AmigaOS 3.x
+  * Picasso / CGX compatible graphic card or AGA.
+  * 32 MB Ram (64MB for complex sites).
+  * 68020+ CPU, for usable speed fast 68060 is required.
+  * MUI 3.8+ for Preferences and url bar
+  * Copy contents of env folder to envarc: for wallget profile
+  * Minimum 100000  stack size
+  * AmiSSl 5.20 for https support. Note: make sure you have current time 
+    and local region set on your WB.
+
+    Optional:
+    --------
+    * FFplay in C for video playback
+    * Amplifier or other capable of audio streaming program
+    * Hipoplayer, Eagleplayer, DeliTracket2
+    * OpenURL for mailto:
+    * Online-convert API key for auto mpeg 1 conversion
+    * Riva player  for mpeg 1 video playback
+
+ Features:
+ =========
+
+  * Web standards: HTML 4.01 and CSS 2.1
+  * HTTPS for secure online transactions
+  * Local history trees
+  * Hotlist manager (bookmarks)
+  * Themes
+  * Favourite buttons
+  * Unicode text
+  * Video/audio streaming & youtube playback
+  * Online video conversion to mpeg 1
+  * Quick search bar
+  * Web page thumbnailing
+  * Fast, lightweight layout and rendering engine
+  * Three download managers (wallget, wget, builtin)
+  * MUI Preferences
+
+ Usage:
+ ======
+  * Go back and forward with ctrl/alt + left/right or 6 and 7 mouse button..
+  * Move to top or bottom with ctrl/alt + up/down.
+  * F4 - Open Prefs.
+  * F5 - Refresh.
+  * F6 - Stop loading current page.
+  * F7 - Restart to current page.
+  * Delete links from bookmarks - move over link and press Delete key.
+  * Copy/paste link of current website buttons are  placed
+     on the right side under searchbar.
+  * Play videos from youtube with ffplay - open site with
+     video you want to watch and press third button from the right.
+     Use youtube_autoplay:1 option to enable autoplay after download. 
+     Video is saved to ram:video.mp4.
+  * Set currently open page as homepage - small button with home.
+  * Change current search engine - button placed next to search bar.
+  * Download page - button with down arrow.
+  * To change theme use 'theme' option. Use name of theme folder. 
+    Path is "PROGDIR:Resources/theme/<name here>".   
+
+Mpeg 1 auto conversion How To:
+==============================
+To play videos, including youtube, as mpeg 1
+you need to login to cloudconvert.com
+Go to Dashboard/Authorization details and copy API key.
+Open NetSurf Preferences/Other and paste it to API key edit box.
+Select Mpeg 1 player as RIVA.
+
+Thanks to Bernd Roesch for his bugfixed/improved SDL libraries and 
+big endian rendering fix.
+Ken Lester Jr. and Martin Merz for icons.
+Alper Sonmez for installer script.
+Chris Raynor for SDL AGA.
+NetSurf team.
+
+See http://www.netsurf-browser.org for more information about NetSurf.
+Visit http://artishq.wordpress.com for my  68k game ports.
+
+Working on NetSurf takes a lot of time.
+Support NetSurf 68k to paypal arturjarosik gmail com.
+Thanks :)

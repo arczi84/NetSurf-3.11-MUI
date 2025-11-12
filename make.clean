@@ -1,0 +1,1 @@
+make -j16 HOST=clib2 TARGET=mui clean
