@@ -1304,6 +1304,8 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 	ULONG pointertype = POINTERTYPE_NORMAL;
 
+	LOG(("DEBUG: gui_window_set_pointer called with shape=%d", shape));
+
 	switch (shape) {
 	case GUI_POINTER_DEFAULT:
 		pointertype = POINTERTYPE_NORMAL;
@@ -1311,9 +1313,13 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 	case GUI_POINTER_POINT:
 		pointertype = POINTERTYPE_LINK;//SELECTLINK;
+		LOG(("DEBUG: GUI_POINTER_POINT -> POINTERTYPE_LINK = %d", pointertype));
 		break;
-    #if defined(__MORPHOS__)
+
 	case GUI_POINTER_CARET:
+		pointertype = POINTERTYPE_TEXT;
+		break;
+
 	case GUI_POINTER_MENU:
 	case GUI_POINTER_UP:
 	case GUI_POINTER_DOWN:
@@ -1349,7 +1355,6 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	case GUI_POINTER_PROGRESS:
 		pointertype = POINTERTYPE_WORKING;
 		break;
-    #endif    
 	}
 
 	if (g->pointertype != pointertype) {

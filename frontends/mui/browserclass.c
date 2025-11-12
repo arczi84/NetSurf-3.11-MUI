@@ -80,7 +80,6 @@ mui_plot_log_stats(const char *label)
 #include "os3.h"
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
-#define POINTERTYPE_NORMAL 0
 //#define BITMAP_FLAGS BMF_MINPLANES
 #define BITMAP_FLAGS (BMF_MINPLANES | BMF_DISPLAYABLE)
 
@@ -672,6 +671,9 @@ STATIC VOID doset(APTR obj, struct Data *data, struct TagItem *tags)
             case MA_Browser_Pointer:
                 if (data->pointertype != tdata) {
                     data->pointertype = tdata;
+                    // Apply the pointer change via MUI
+                    LOG(("DEBUG: Setting pointer type to %ld", tdata));
+                    set(obj, MUIA_PointerType, tdata);
                 }
                 break;
 

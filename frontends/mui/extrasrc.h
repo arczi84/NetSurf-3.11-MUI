@@ -37,9 +37,17 @@ struct RastPort;
 
 #define WA_PointerType (TAG_USER + 0)
 
-#define POINTERTYPE_NORMAL    0
-#define POINTERTYPE_LINK      1
-#define POINTERTYPE_INVISIBLE 2
+#define POINTERTYPE_NORMAL       MUIV_PointerType_Normal
+#define POINTERTYPE_LINK         MUIV_PointerType_Link
+#define POINTERTYPE_SELECTLINK   MUIV_PointerType_Link
+#define POINTERTYPE_AIMING       MUIV_PointerType_Cross
+#define POINTERTYPE_MOVE         MUIV_PointerType_DragAndDrop
+#define POINTERTYPE_BUSY         MUIV_PointerType_Busy
+#define POINTERTYPE_HELP         MUIV_PointerType_Help
+#define POINTERTYPE_NOTAVAILABLE MUIV_PointerType_NoDrop
+#define POINTERTYPE_WORKING      MUIV_PointerType_Progress
+#define POINTERTYPE_INVISIBLE    MUIV_PointerType_None
+#define POINTERTYPE_TEXT         MUIV_PointerType_Text
 
 #ifdef TTENGINE
 #ifndef TT_Encoding_System_UTF8
