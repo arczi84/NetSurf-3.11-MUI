@@ -193,7 +193,7 @@ static ULONG __saveds __asm name##_Dispatcher( \
 #define DECSUBCLASS(super,name,pri) struct MUI_CustomClass *classp##name;\
 	CONSTRUCTOR_P(init##name,pri){\
 		classp##name=MUI_CreateCustomClass(NULL,super,NULL,sizeof(struct Data),DISPATCHERREF);\
-		if(classp##name&&MUIMasterBase->lib_Version>=20)classp##name->mcc_Class->cl_ID=#name;\
+		if(classp##name&&MUIMasterBase&&MUIMasterBase->lib_Version>=20)classp##name->mcc_Class->cl_ID=#name;\
 		return(classp##name?0:-1);\
 	}\
 	DESTRUCTOR_P(init##name,pri){if(classp##name)MUI_DeleteCustomClass(classp##name);}\
@@ -206,7 +206,7 @@ static ULONG __saveds __asm name##_Dispatcher( \
 	CONSTRUCTOR_P(init##name,pri){\
 		extern struct MUI_CustomClass *classp##super;\
 		classp##name=MUI_CreateCustomClass(NULL,NULL,classp##super,sizeof(struct Data),DISPATCHERREF);\
-		if(classp##name&&MUIMasterBase->lib_Version>=20)classp##name->mcc_Class->cl_ID=#name;\
+		if(classp##name&&MUIMasterBase&&MUIMasterBase->lib_Version>=20)classp##name->mcc_Class->cl_ID=#name;\
 		return(classp##name?0:-1);\
 	}\
 	DESTRUCTOR_P(init##name,pri){if(classp##name)MUI_DeleteCustomClass(classp##name);}\
@@ -259,8 +259,8 @@ static ULONG __saveds __asm name##_Dispatcher( \
 	{ \
 		if (!(mcc##name = (struct MUI_CustomClass *)MUI_CreateCustomClass(NULL, super, NULL, sizeof(struct Data), DISPATCHERREF))) \
 			return (FALSE); \
-			if (MUIMasterBase->lib_Version >= 20) \
-				mcc##name->mcc_Class->cl_ID = #name; \
+		if (MUIMasterBase && MUIMasterBase->lib_Version >= 20) \
+			mcc##name->mcc_Class->cl_ID = #name; \
 		return (TRUE); \
 	} \
 	void delete_##name(void) \

@@ -405,7 +405,12 @@ static LONG startup(void)
 
     // Open muimaster.library
 	MUIMasterBase = OpenLibrary("muimaster.library", 19);
-    LOG(("DEBUG: muimaster.library %s\n", MUIMasterBase ? "opened" : "FAILED to open"));
+    if (MUIMasterBase) {
+        LOG(("DEBUG: muimaster.library opened, version %ld.%ld\n", 
+             MUIMasterBase->lib_Version, MUIMasterBase->lib_Revision));
+    } else {
+        LOG(("ERROR: Failed to open muimaster.library version 19+\n"));
+    }
     if (!MUIMasterBase) goto cleanup;
 
     // Open cybergraphics.library
