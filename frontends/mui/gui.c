@@ -630,18 +630,9 @@ static nserror set_defaults(struct nsoption_s *defaults)
 			defaults[NSOPTION_redraw_tile_size_y].value.i = 100;
 		}
 	}
-	//nsoption_setnull_charp(default_stylesheet_url, strdup("file:///Resources/default.css"));
-	//nsoption_setnull_charp(adblock_stylesheet_url, strdup("file:///Resources/adblock.css"));
 
-	//nsoption_setnull_charp(net_player, strdup("C:ffplay"));
-	//nsoption_setnull_charp(mpeg_player, strdup("C:Riva"));
-	//nsoption_setnull_charp(download_path, strdup("Downloads/"));
 	//nsoption_setnull_charp(cache_dir, strdup("PROGDIR:Resources/Cache"));
-	//nsoption_setnull_charp(homepage_url, strdup("www.netsurf-browser.org/welcome"));
-	//nsoption_setnull_charp(theme, strdup("PROGDIR:Resources/themes/default"));
-	//nsoption_setnull_charp(download_manager, strdup("c/wallget"));
-	//nsoption_setnull_charp(favicon_source, strdup("http://www.google.com/s2/favicons?domain="));
-
+	nsoption_setnull_charp(homepage_url, strdup("www.netsurf-browser.org/welcome"));
 
 	if (nsoption_charp(cookie_file) == NULL ||
 	    nsoption_charp(cookie_jar) == NULL) {
@@ -1304,7 +1295,7 @@ void gui_window_update_extent(struct gui_window *g)
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	global_obj = g->obj;
-	//LOG(("DEBUG: gui_window_set_status: %s\n", text));
+
 	methodstack_push_sync(g->obj, 3, MUIM_Set, MA_Browser_StatusText, text);
 }
 
@@ -1859,31 +1850,13 @@ void main(int argc, char** argv)
 		netsurf_setup();	
 
 		LOG(("DEBUG: NSERROR_OK returned from netsurf_init"));
-		//plot = muiplot;
 
-		//urldb_load(homepage_url);
-		
 		urldb_load_cookies(nsoption_charp(cookie_file));
-		//mui_global_history_initialise();
-		
-		/* create an initial browser window */
-		//mui_cookies_initialise(); //disabled for now
-		//save_complete_init();
-		NSLOG(netsurf, INFO,"calling browser_window_create");
 
-		/*ret = nsurl_create("about:blank", &url);
-		if (ret == NSERROR_OK) {
-			ret = browser_window_create(BW_CREATE_HISTORY,
-							url,
-							NULL,
-							NULL,
-							&bw);
-			nsurl_unref(url);
-		}
-		if (ret != NSERROR_OK)
-			printf("Errorcode:", messages_get_errorcode(ret));
-	*/		
-	} //startup() 
+		/* create an initial browser window */
+
+		NSLOG(netsurf, INFO,"calling browser_window_create");	
+	} 
 
     	LOG(("DEBUG: About to call gui_init2"));
 
