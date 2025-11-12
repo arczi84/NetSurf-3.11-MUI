@@ -4,10 +4,11 @@ Resources
 NetSurf_Amiga
 Users
 *workspace
-NetSurf-SDL
+NetSurf-SDL*
 file.map
-run_NetSurf3.11
-run_NetSurf3.11_nsw
+run_NetSurf3.11*
+run_NetSurf3.11_nsw*
+*.info
 log-mui.txt
 log-art.txt
 *.7z
