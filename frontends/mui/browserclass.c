@@ -162,8 +162,10 @@ copy_bitmap_tile_to_screen(APTR obj, struct Data *data,
         return;
     }
 
+    // Source coordinates in the bitmap
     int src_x = screen_x0;
     int src_y = screen_y0;
+    // Destination coordinates on screen
     int dest_x = dest_left + screen_x0;
     int dest_y = dest_top + screen_y0;
 
@@ -250,6 +252,7 @@ copy_bitmap_to_screen(APTR obj, struct Data *data)
         return;
     }
 
+    // Bitmap contains the visible area, copy from 0,0
     copy_bitmap_tile_to_screen(obj, data,
         0, 0,
         (int)copy_width, (int)copy_height);
@@ -516,11 +519,25 @@ STATIC VOID render_content_to_bitmap(APTR obj, struct Data *data)
     }
 
     float scale = browser_window_get_scale(data->context->bw);
+    
+    // Get actual content dimensions
+    int content_draw_width = content_get_width(content) * scale;
+    int content_draw_height = content_get_height(content) * scale;
 
     LONG vleft = getv(obj, MUIA_Virtgroup_Left);
     LONG vtop = getv(obj, MUIA_Virtgroup_Top);
 
-    LOG(("DEBUG: Calling tiled off-screen redraw"));
+    // Clamp scroll positions to prevent scrolling beyond content
+    LONG max_vleft = content_draw_width - data->bm_width;
+    LONG max_vtop = content_draw_height - data->bm_height;
+    
+    if (max_vleft < 0) max_vleft = 0;
+    if (max_vtop < 0) max_vtop = 0;
+    
+    if (vleft > max_vleft) vleft = max_vleft;
+    if (vtop > max_vtop) vtop = max_vtop;
+    if (vleft < 0) vleft = 0;
+    if (vtop < 0) vtop = 0;
     mui_plot_reset_stats();
     struct mui_tile_flush_ctx flush_ctx = {
         .obj = obj,
@@ -558,9 +575,6 @@ STATIC VOID render_content_to_bitmap(APTR obj, struct Data *data)
     }
     
     // Fill remaining areas if content is smaller than bitmap
-    int content_draw_width = content_get_width(content) * scale;
-    int content_draw_height = content_get_height(content) * scale;
-
     if (content_draw_width < data->bm_width) {
         SetRast(data->RastPort, 0);
         RectFill(data->RastPort, content_draw_width, 0, data->bm_width - 1, data->bm_height - 1);
@@ -1166,8 +1180,33 @@ DEFMMETHOD(HandleEvent)
                 LONG button = imsg->Code & IECODE_LBUTTON ? BROWSER_MOUSE_PRESS_1 : BROWSER_MOUSE_PRESS_2;
                 LONG click = imsg->Code & IECODE_LBUTTON ? BROWSER_MOUSE_CLICK_1 : BROWSER_MOUSE_CLICK_2;
                 mouse_inside = 1;
-                MouseX += getv(obj, MUIA_Virtgroup_Left);
-                MouseY += getv(obj, MUIA_Virtgroup_Top);
+                
+                // Get and clamp scroll positions for mouse coordinate adjustment
+                LONG vleft = getv(obj, MUIA_Virtgroup_Left);
+                LONG vtop = getv(obj, MUIA_Virtgroup_Top);
+                
+                if (data->context && data->context->bw && browser_window_has_content(data->context->bw)) {
+                    struct hlcache_handle *content = browser_window_get_content(data->context->bw);
+                    if (content) {
+                        float scale = browser_window_get_scale(data->context->bw);
+                        int content_width = content_get_width(content) * scale;
+                        int content_height = content_get_height(content) * scale;
+                        
+                        LONG max_vleft = content_width - data->mwidth;
+                        LONG max_vtop = content_height - data->mheight;
+                        
+                        if (max_vleft < 0) max_vleft = 0;
+                        if (max_vtop < 0) max_vtop = 0;
+                        
+                        if (vleft > max_vleft) vleft = max_vleft;
+                        if (vtop > max_vtop) vtop = max_vtop;
+                        if (vleft < 0) vleft = 0;
+                        if (vtop < 0) vtop = 0;
+                    }
+                }
+                
+                MouseX += vleft;
+                MouseY += vtop;
 
                 switch (imsg->Code) {
                     case SELECTDOWN:
@@ -1191,8 +1230,33 @@ DEFMMETHOD(HandleEvent)
         } else if (imsg->Class == IDCMP_MOUSEMOVE) {
             if (MouseX >= 0 && MouseY >= 0 && MouseX < data->mwidth && MouseY < data->mheight) {
                 mouse_inside = 1;
-                MouseX += getv(obj, MUIA_Virtgroup_Left);
-                MouseY += getv(obj, MUIA_Virtgroup_Top);
+                
+                // Get and clamp scroll positions for mouse coordinate adjustment
+                LONG vleft = getv(obj, MUIA_Virtgroup_Left);
+                LONG vtop = getv(obj, MUIA_Virtgroup_Top);
+                
+                if (data->context && data->context->bw && browser_window_has_content(data->context->bw)) {
+                    struct hlcache_handle *content = browser_window_get_content(data->context->bw);
+                    if (content) {
+                        float scale = browser_window_get_scale(data->context->bw);
+                        int content_width = content_get_width(content) * scale;
+                        int content_height = content_get_height(content) * scale;
+                        
+                        LONG max_vleft = content_width - data->mwidth;
+                        LONG max_vtop = content_height - data->mheight;
+                        
+                        if (max_vleft < 0) max_vleft = 0;
+                        if (max_vtop < 0) max_vtop = 0;
+                        
+                        if (vleft > max_vleft) vleft = max_vleft;
+                        if (vtop > max_vtop) vtop = max_vtop;
+                        if (vleft < 0) vleft = 0;
+                        if (vtop < 0) vtop = 0;
+                    }
+                }
+                
+                MouseX += vleft;
+                MouseY += vtop;
 
                 if (data->mouse_state & BROWSER_MOUSE_PRESS_1) {
                     browser_window_mouse_track(data->browser, BROWSER_MOUSE_DRAG_1 | data->key_state, MouseX, MouseY);
@@ -1322,9 +1386,11 @@ DEFTMETHOD(Browser_Redraw)
     
     data->redraw_pending = 0;
     
-    if (!data->BitMap || data->changed) {
+    // Use window size for bitmap - we render only the visible area
+    if (!data->BitMap || data->changed || 
+        data->bm_width != data->mwidth || data->bm_height != data->mheight) {
         if (create_offscreen_bitmap(obj, data, data->mwidth, data->mheight)) {
-            LOG(("DEBUG: Created offscreen bitmap, rendering content"));
+            LOG(("DEBUG: Created offscreen bitmap %lux%lu, rendering content", data->mwidth, data->mheight));
             render_content_to_bitmap(obj, data);
             data->changed = 0;
         } else {
@@ -1351,69 +1417,7 @@ DEFTMETHOD(Browser_Redraw)
 
     return 0;
 }
-#if 0
-DEFMMETHOD(Draw)
-{
-    DOSUPER;
-    if (msg->flags & (MADF_DRAWOBJECT | MADF_DRAWUPDATE)) {
-        GETDATA;
-        
-        LONG vleft = getv(obj, MUIA_Virtgroup_Left);
-        LONG vtop = getv(obj, MUIA_Virtgroup_Top);
-        
-        /* DODAJ te zmienne jak w starym kodzie */
-        ULONG mleft = _mleft(obj);
-        ULONG mtop = _mtop(obj);
-        ULONG width = _mwidth(obj);
-        ULONG height = _mheight(obj);
-        
-        LOG(("DEBUG: Draw called - vleft=%ld vtop=%ld mleft=%lu mtop=%lu", 
-             vleft, vtop, mleft, mtop));
-        
-        if (data->vleft_old != vleft || data->vtop_old != vtop || 
-            data->changed || data->redraw_pending || !data->BitMap) {
-            
-            data->vleft_old = vleft;
-            data->vtop_old = vtop;
-            data->changed = 0;
-            
-            if (!data->redraw_pending) {
-                data->redraw_pending = 1;
-                LOG(("DEBUG: Scheduling redraw due to scroll or change"));
-                DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
-                         1 | MUIV_PushMethod_Delay(1) | MUIF_PUSHMETHOD_SINGLE, MM_Browser_Redraw);
-            }
-            
-            /* DODAJ: Kopiuj istniejący bitmap nawet gdy redraw pending */
-            if (data->BitMap && data->RastPort) {
-                LOG(("DEBUG: Copying existing BitMap while redraw pending"));
-                
-                /* Użyj zmiennych lokalnych jak w starym kodzie */
-                BltBitMapRastPort(data->BitMap, vleft, vtop, _rp(obj),
-                                  mleft, mtop, width, height, 0xc0);
-                                  
-                LOG(("DEBUG: Copy completed - bitmap->screen"));
-            }
-            
-        } else if (data->BitMap) {
-            if (data->RastPort == NULL) {
-                LOG(("ERROR: RastPort is NULL, cannot draw"));
-                return 0;
-            }
-            
-            LOG(("DEBUG: Drawing from existing BitMap"));
-            
-            /* Użyj zmiennych lokalnych jak w starym kodzie */
-            BltBitMapRastPort(data->BitMap, vleft, vtop, _rp(obj),
-                              mleft, mtop, width, height, 0xc0);
-                              
-            LOG(("DEBUG: Normal copy completed"));
-        }
-    }
-    return 0;
-}
 
-#else
 DEFMMETHOD(Draw)
 {
     DOSUPER;
@@ -1424,26 +1428,38 @@ DEFMMETHOD(Draw)
         const LONG vleft = getv(obj, MUIA_Virtgroup_Left);
         const LONG vtop = getv(obj, MUIA_Virtgroup_Top);
 
+        // Check if scrolled
+        const bool scrolled = (data->vleft_old != vleft) || (data->vtop_old != vtop);
+        
+        // Need new render if content changed (but not just scrolled)
         const bool need_new_render =
-            (data->vleft_old != vleft) ||
-            (data->vtop_old != vtop) ||
             data->changed ||
             data->redraw_pending ||
             (data->BitMap == NULL);
 
-        if (need_new_render) {
+        if (scrolled) {
             data->vleft_old = vleft;
             data->vtop_old = vtop;
-            data->changed = 0;
-
+            
+            // Schedule delayed redraw for scroll (250ms delay to allow smooth scrolling)
             if (!data->redraw_pending) {
                 data->redraw_pending = 1;
-                LOG(("DEBUG: Scheduling redraw due to scroll or change"));
+                LOG(("DEBUG: Scheduling delayed redraw after scroll"));
                 DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
-                         1 | MUIV_PushMethod_Delay(1), MM_Browser_Redraw);
+                         1 | MUIV_PushMethod_Delay(12), MM_Browser_Redraw);  // 250ms delay
+            }
+        } else if (need_new_render) {
+            data->changed = 0;
+            
+            if (!data->redraw_pending) {
+                data->redraw_pending = 1;
+                LOG(("DEBUG: Scheduling immediate redraw due to content change"));
+                DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
+                         1, MM_Browser_Redraw);
             }
         }
 
+        // Always show existing bitmap immediately (even if outdated during scroll)
         if (data->BitMap) {
             if (data->RastPort == NULL) {
                 LOG(("ERROR: RastPort is NULL, cannot draw"));
@@ -1457,7 +1473,7 @@ DEFMMETHOD(Draw)
 
     return 0;
 }
-#endif
+
 DEFTMETHOD(Browser_CheckContent)
 {
     GETDATA;

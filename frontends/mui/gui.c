@@ -1281,10 +1281,10 @@ void gui_window_update_extent(struct gui_window *g)
 		return;
 	}
 
-	int width ;
-	int height ;
-//not sure which one to use
-	browser_window_get_extents(g->bw, true, &width, &height);
+	int width;
+	int height;
+	// Use false to get unscaled document dimensions
+	browser_window_get_extents(g->bw, false, &width, &height);
 
 	methodstack_push(g->obj, 3, MM_Browser_SetContentSize, width, height);
 
