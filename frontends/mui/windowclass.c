@@ -56,8 +56,13 @@ DEFNEW
 
     LOG(("Entering NEW method"));
     // Verify MUI classes
+#if defined(__MORPHOS2__)
     if (!getnavigationbargroupclass() || !getsearchbargroupclass() || !getaddressbargroupclass() ||
         !getfindtextclass() || !gettitleclass()) {
+#else
+    if (!getnavigationbargroupclass() || !getsearchbargroupclass() || !getaddressbargroupclass() ||
+        !getfindtextclass()) {
+#endif
         LOG(("One or more MUI classes unavailable"));
         MUI_Request(NULL, NULL, 0, "Error", "OK", "Missing required MUI classes!");
         return 0;
@@ -201,8 +206,13 @@ DEFNEW
 
     LOG(("Entering NEW method"));
     // Verify MUI classes
+#if defined(__MORPHOS2__)
     if (!getnavigationbargroupclass() || !getsearchbargroupclass() || !getaddressbargroupclass() ||
         !getfindtextclass() || !gettitleclass()) {
+#else
+    if (!getnavigationbargroupclass() || !getsearchbargroupclass() || !getaddressbargroupclass() ||
+        !getfindtextclass()) {
+#endif
         LOG(("One or more MUI classes unavailable"));
         MUI_Request(NULL, NULL, 0, "Error", "OK", "Missing required MUI classes!");
         return 0;

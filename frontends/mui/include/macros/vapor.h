@@ -257,10 +257,20 @@ static ULONG __saveds __asm name##_Dispatcher( \
 #define DECSUBCLASS_NC(super,name) static struct MUI_CustomClass *mcc##name; \
 	ULONG create_##name(void) \
 	{ \
-		if (!(mcc##name = (struct MUI_CustomClass *)MUI_CreateCustomClass(NULL, super, NULL, sizeof(struct Data), DISPATCHERREF))) \
+		kprintf("DEBUG: Creating class " #name ", sizeof(struct Data)=%ld\n", (long)sizeof(struct Data)); \
+		kprintf("DEBUG: Superclass: " super "\n"); \
+		kprintf("DEBUG: Calling MUI_CreateCustomClass...\n"); \
+		mcc##name = (struct MUI_CustomClass *)MUI_CreateCustomClass(NULL, super, NULL, sizeof(struct Data), DISPATCHERREF); \
+		if (!mcc##name) { \
+			kprintf("ERROR: MUI_CreateCustomClass failed for " #name "\n"); \
 			return (FALSE); \
-		if (MUIMasterBase && MUIMasterBase->lib_Version >= 20) \
+		} \
+		kprintf("DEBUG: Class " #name " created successfully, mcc=%p\n", mcc##name); \
+		if (MUIMasterBase && MUIMasterBase->lib_Version >= 20) { \
+			kprintf("DEBUG: Setting cl_ID for " #name "\n"); \
 			mcc##name->mcc_Class->cl_ID = #name; \
+		} \
+		kprintf("DEBUG: Class " #name " initialization complete\n"); \
 		return (TRUE); \
 	} \
 	void delete_##name(void) \
@@ -270,7 +280,7 @@ static ULONG __saveds __asm name##_Dispatcher( \
 	} \
 	struct IClass *get##name(void) \
 	{ \
-		return (mcc##name->mcc_Class); \
+		return (mcc##name ? mcc##name->mcc_Class : NULL); \
 	} \
 	APTR get##name##root(void) \
 	{ \
