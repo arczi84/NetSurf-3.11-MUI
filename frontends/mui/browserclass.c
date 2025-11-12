@@ -753,23 +753,31 @@ DEFMMETHOD(Setup)
     IPTR rc = DOSUPER;
 
     if (rc) {
+        struct Screen *screen;
+        struct RastPort *rp;
+        struct BitMap *bm;
+        struct ColorMap *cm;
+        ULONG depth;
+
         LOG(("DEBUG: Setup called, checking graphics libraries"));
-        
+
         if (CyberGfxBase) {
             LOG(("DEBUG: CyberGraphX available"));
         } else {
             LOG(("WARNING: CyberGraphX not available, limited to native chipset"));
         }
 
-        //if (TTEngineBase) {
-        //    LOG(("DEBUG: TTEngine available"));
-       // } else {
-        //    LOG(("WARNING: TTEngine not available, fallback to system fonts"));
-        //}
+        // Bail out early if the window does not have a screen yet (seen on old MUI versions)
+        screen = _screen(obj);
+        if (!screen) {
+            LOG(("ERROR: Setup: _screen(obj) returned NULL, skipping palette setup"));
+            return rc;
+        }
 
-        // Allocate pens only if needed
-        struct ColorMap *cm = _screen(obj)->ViewPort.ColorMap;
-        ULONG depth = GetBitMapAttr(_screen(obj)->RastPort.BitMap, BMA_DEPTH);
+        rp = &screen->RastPort;
+        bm = rp ? rp->BitMap : NULL;
+        cm = screen->ViewPort.ColorMap;
+        depth = bm ? GetBitMapAttr(bm, BMA_DEPTH) : 0;
         LOG(("DEBUG: Screen depth in Setup: %lu", depth));
 
         if (depth <= 8 && cm) {  // Only for paletted modes
@@ -803,13 +811,21 @@ DEFMMETHOD(Cleanup)
 {
     GETDATA;
 
-    struct ColorMap *cm = _screen(obj)->ViewPort.ColorMap;
-    if (global_pen_a >= 0) {
-        ReleasePen(cm, global_pen_a);
+    struct Screen *screen = _screen(obj);
+    struct ColorMap *cm = screen ? screen->ViewPort.ColorMap : NULL;
+    if (cm) {
+        if (global_pen_a >= 0) {
+            ReleasePen(cm, global_pen_a);
+            global_pen_a = -1;
+        }
+        if (global_pen_b >= 0) {
+            ReleasePen(cm, global_pen_b);
+            global_pen_b = -1;
+        }
+    } else if (global_pen_a >= 0 || global_pen_b >= 0) {
+        LOG(("WARNING: Cleanup: missing ColorMap, cannot release pens (pen_a=%ld, pen_b=%ld)",
+            global_pen_a, global_pen_b));
         global_pen_a = -1;
-    }
-    if (global_pen_b >= 0) {
-        ReleasePen(cm, global_pen_b);
         global_pen_b = -1;
     }
 
@@ -831,6 +847,9 @@ DEFMMETHOD(Show)
 
         LOG(("DEBUG: Show successful, _win(obj) = %p, muiRenderInfo = %p", _win(obj), muiRenderInfo(obj)));
 
+        LOG(("DEBUG: Current offscreen bitmap: %p (%lux%lu)", data->bm, data->bm_width, data->bm_height));
+        LOG(("DEBUG: data->browser=%p, data->context=%p", data->browser, data->context));
+
         if (data->mwidth != mwidth || data->mheight != mheight) {
             data->mwidth = mwidth;
             data->mheight = mheight;
@@ -850,6 +869,8 @@ DEFMMETHOD(Show)
 DEFMMETHOD(Hide)
 {
     GETDATA;
+    LOG(("DEBUG: Browser Hide called"));
+    LOG(("DEBUG: Removing event handler %p from window %p", &data->ehnode, _win(obj)));
     DoMethod(_win(obj), MUIM_Window_RemEventHandler, &data->ehnode);
     return DOSUPER;
 }

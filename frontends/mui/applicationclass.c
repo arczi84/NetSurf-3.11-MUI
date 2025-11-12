@@ -39,7 +39,7 @@
 #include "mui/netsurf.h"
 #include "mui/utils.h"
 
-#include "utils/log0.h"
+#include "utils/log2.h"
 
 struct windownode
 {
@@ -882,19 +882,17 @@ DEFSMETHOD(Application_NewWindow)
 
 	if (node)
 	{
-		ULONG idstr[2];
+		ULONG win_id;
 		APTR win;
 
 		node->num = num;
 
-		#if defined(__MORPHOS__)
-		NewRawDoFmt("M%03u", NULL, (APTR)&idstr, num);
-		#else
-		sprintf((char *)&idstr, "M%03u", num);
-		#endif
+		/* Build a unique 32-bit identifier using 'M' as the high byte. */
+		win_id = ((ULONG)'M' << 24) | (num & 0x00ffffff);
 
+		LOG(("DEBUG: Creating window with ID 0x%08lx (index %lu)", win_id, num));
 		win = NewObject(getwindowclass(), NULL,
-			MUIA_Window_ID, idstr[0],
+			MUIA_Window_ID, win_id,
 			MUIA_Window_ScreenTitle, data->screentitle,
 			MUIA_Window_Title, "NetSurf",
 			MA_Window_Node, node,
@@ -907,10 +905,13 @@ DEFSMETHOD(Application_NewWindow)
 			data->active_window = node;
 
 			insert_sorted(&data->windowlist, node);
+			LOG(("DEBUG: About to call OM_ADDMEMBER"));
 			DoMethod(obj, OM_ADDMEMBER, win);
 
-			set(win, MUIA_Window_Open, TRUE);
+			LOG(("DEBUG: OM_ADDMEMBER completed, scheduling window open"));
+			DoMethod(obj, MUIM_Application_PushMethod, win, 3, MUIM_Set, MUIA_Window_Open, TRUE);
 			rc = TRUE;
+			LOG(("DEBUG: MUIM_Application_PushMethod queued window open"));
 		}
 		else
 		{
