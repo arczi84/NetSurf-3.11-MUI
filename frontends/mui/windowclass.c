@@ -31,7 +31,7 @@
 #include "mui/mui.h"
 #include "mui/netsurf.h"
 #include "libraries/mui.h"
-#include "utils/log.h"
+#include "utils/log2.h"
 
 #define APPLICATION_NAME "NetSurf"
 #define WINDOW_TITLE_FORMAT "NetSurf: %s"
@@ -48,157 +48,7 @@ struct Data
     APTR pagetitles;
     STRPTR windowtitle;
 };
-#if 0
-DEFNEW
-{
-    APTR navbar = NULL, addressbar = NULL, searchbar = NULL, findbar = NULL;
-    APTR statusbar = NULL, bgroup = NULL;
 
-    LOG(("Entering NEW method"));
-    // Verify MUI classes
-#if defined(__MORPHOS2__)
-    if (!getnavigationbargroupclass() || !getsearchbargroupclass() || !getaddressbargroupclass() ||
-        !getfindtextclass() || !gettitleclass()) {
-#else
-    if (!getnavigationbargroupclass() || !getsearchbargroupclass() || !getaddressbargroupclass() ||
-        !getfindtextclass()) {
-#endif
-        LOG(("One or more MUI classes unavailable"));
-        MUI_Request(NULL, NULL, 0, "Error", "OK", "Missing required MUI classes!");
-        return 0;
-    }
-
-    LOG(("Creating navigation bar"));
-    navbar = NewObject(getnavigationbargroupclass(), NULL, TAG_DONE);
-    if (!navbar) {
-        LOG(("Failed to create navbar"));
-        MUI_Request(NULL, NULL, 0, "Error", "OK", "Failed to create navigation bar!");
-        return 0;
-    }
-
-    LOG(("Creating search bar"));
-    searchbar = NewObject(getsearchbargroupclass(), NULL, TAG_DONE);
-    if (!searchbar) {
-        LOG(("Failed to create searchbar"));
-        MUI_DisposeObject(navbar);
-        MUI_Request(NULL, NULL, 0, "Error", "OK", "Failed to create search bar!");
-        return 0;
-    }
-
-    LOG(("Creating address bar"));
-    addressbar = NewObject(getaddressbargroupclass(), NULL, TAG_DONE);
-    if (!addressbar) {
-        LOG(("Failed to create addressbar"));
-        MUI_DisposeObject(navbar);
-        MUI_DisposeObject(searchbar);
-        MUI_Request(NULL, NULL, 0, "Error", "OK", "Failed to create address bar!");
-        return 0;
-    }
-
-    LOG(("Creating browser group"));
-    bgroup = VGroup, MUIA_Group_PageMode, TRUE, End;
-    if (!bgroup) {
-        LOG(("Failed to create bgroup"));
-        MUI_DisposeObject(navbar);
-        MUI_DisposeObject(searchbar);
-        MUI_DisposeObject(addressbar);
-        MUI_Request(NULL, NULL, 0, "Error", "OK", "Failed to create browser group!");
-        return 0;
-    }
-
-    LOG(("Creating find bar"));
-    findbar = NewObject(getfindtextclass(), NULL, MUIA_ShowMe, FALSE, TAG_DONE);
-    if (!findbar) {
-        LOG(("Failed to create findbar"));
-        MUI_DisposeObject(navbar);
-        MUI_DisposeObject(searchbar);
-        MUI_DisposeObject(addressbar);
-        MUI_DisposeObject(bgroup);
-        MUI_Request(NULL, NULL, 0, "Error", "OK", "Failed to create find bar!");
-        return 0;
-    }
-
-    LOG(("Creating status bar"));
-    statusbar = TextObject, MUIA_Text_Contents, "", TAG_DONE);
-    if (!statusbar) {
-        LOG(("Failed to create statusbar"));
-        MUI_DisposeObject(navbar);
-        MUI_DisposeObject(searchbar);
-        MUI_DisposeObject(addressbar);
-        MUI_DisposeObject(bgroup);
-        MUI_DisposeObject(findbar);
-        MUI_Request(NULL, NULL, 0, "Error", "OK", "Failed to create status bar!");
-        return 0;
-    }
-
-    LOG(("Creating window object"));
-    obj = DoSuperNew(cl, obj,
-        MUIA_Window_Width, MUIV_Window_Width_Visible(75),
-        MUIA_Window_Height, MUIV_Window_Height_Visible(90),
-        MUIA_Window_TopEdge, MUIV_Window_TopEdge_Centered,
-        MUIA_Window_LeftEdge, MUIV_Window_LeftEdge_Centered,
-        MUIA_Window_AppWindow, TRUE,
-        MUIA_Window_RootObject, VGroup,
-            Child, HGroup,
-                Child, navbar,
-                Child, searchbar,
-            End,
-            Child, addressbar,
-            Child, bgroup,
-            Child, findbar,
-            Child, statusbar,
-        End,
-        TAG_MORE, msg->ops_AttrList);
-
-    if (!obj) {
-        LOG(("DoSuperNew failed"));
-        MUI_DisposeObject(navbar);
-        MUI_DisposeObject(searchbar);
-        MUI_DisposeObject(addressbar);
-        MUI_DisposeObject(bgroup);
-        MUI_DisposeObject(findbar);
-        MUI_DisposeObject(statusbar);
-        MUI_Request(NULL, NULL, 0, "Error", "OK", "Failed to create window!");
-        return 0;
-    }
-
-    GETDATA;
-    data->navbar = navbar;
-    data->addressbar = addressbar;
-    data->bgroup = bgroup;
-    data->findbar = findbar;
-    data->statusbar = statusbar;
-#if 0
-    LOG(("Creating page titles"));
-    data->pagetitles = NewObject(gettitleclass(), NULL, MUII_Close, 1, MUIA_Title_Closable, TRUE, TAG_DONE);
-    //data->pagetitles = NewObject(gettitleclass(), NULL, TAG_DONE);
-    if (!data->pagetitles) {
-        LOG(("Failed to create pagetitles"));
-        MUI_DisposeObject(obj);
-        MUI_DisposeObject(navbar);
-        MUI_DisposeObject(searchbar);
-        MUI_DisposeObject(addressbar);
-        MUI_DisposeObject(bgroup);
-        MUI_DisposeObject(findbar);
-        MUI_DisposeObject(statusbar);
-        MUI_Request(NULL, NULL, 0, "Error", "OK", "Failed to create page titles!");
-        return 0;
-    }
-    LOG(("pagetitles created"));
-#endif    
-    data->windownode = (APTR)GetTagData(MA_Window_Node, NULL, msg->ops_AttrList);
-    LOG(("windownode=%p", data->windownode));
-
-    LOG(("Setting up window notifications"));
-    DoMethod(obj, MUIM_Notify, MUIA_Window_CloseRequest, TRUE,
-             MUIV_Notify_Application, 2, MM_Application_CloseWindow, data->windownode);
-    DoMethod(obj, MUIM_Notify, MUIA_Window_MenuAction, MUIV_EveryTime,
-             obj, 3, MM_Window_MenuAction, MUIV_TriggerValue);
-
-    LOG(("Window created successfully, obj=%p", obj));
-    return (IPTR)obj;
-}
-#endif
 DEFNEW
 {
     APTR navbar = NULL, addressbar = NULL, searchbar = NULL, findbar = NULL;
@@ -286,17 +136,6 @@ DEFNEW
         return 0;
     }
     LOG(("DEBUG: statusbar created successfully: %p", statusbar));
-    // DEBUG: Make UI elements visible with distinct backgrounds
-    LOG(("DEBUG: Setting background colors for visibility"));
-    set(navbar, MUIA_Background, MUII_ButtonBack);      // Button-like background
-    set(addressbar, MUIA_Background, MUII_StringBack);  // String field background  
-    set(statusbar, MUIA_Background, MUII_TextBack);     // Text background
-    
-    // Also try setting explicit frame types
-    set(navbar, MUIA_Frame, MUIV_Frame_Button);
-    set(addressbar, MUIA_Frame, MUIV_Frame_String);
-    set(statusbar, MUIA_Frame, MUIV_Frame_Text);
-
     LOG(("Creating window object with layout"));
     LOG(("Creating window object with layout"));
     LOG(("DEBUG: Layout structure:"));
@@ -311,10 +150,9 @@ DEFNEW
         MUIA_Window_Height, MUIV_Window_Height_Visible(90),
         MUIA_Window_TopEdge, MUIV_Window_TopEdge_Centered,
         MUIA_Window_LeftEdge, MUIV_Window_LeftEdge_Centered,
-        MUIA_Window_AppWindow, TRUE,
+        // MUIA_Window_AppWindow, TRUE,
         MUIA_Window_RootObject, VGroup,
             Child, HGroup,
-                MUIA_Group_Columns, 2,  // Add explicit column count for debugging
                 Child, navbar,
                 Child, searchbar,
             End,
