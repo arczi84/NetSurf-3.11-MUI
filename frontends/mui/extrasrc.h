@@ -73,48 +73,7 @@ typedef unsigned long long UQUAD;
 #endif
 
 typedef unsigned long  IPTR;
-#if 0
-#define GetHead(_l)  \
-({ struct List *l = (struct List *)(_l);  \
- l->lh_Head->ln_Succ ? l->lh_Head : (struct Node *)0;  \
-})
 
-#define GetTail(_l)  
-({ struct List *l = (struct List *)(_l);  
- l->lh_TailPred->ln_Pred ? l->lh_TailPred : (struct Node *)0;  
-})
-
-#define GetSucc(_n)  
-({ struct Node *n = (struct Node *)(_n);  
- n->ln_Succ->ln_Succ ? n->ln_Succ : (struct Node *)0;  
-})
-
-#define GetPred(_n)  
-({ struct Node *n = (struct Node *)(_n);  
- n->ln_Pred->ln_Pred ? n->ln_Pred : (struct Node *)0;  
-})
-
-#define ForeachNode(l,n)  
-for (  
- n = (void *)(((struct List *)(l))->lh_Head);  
- ((struct Node *)(n))->ln_Succ;  
- n = (void *)(((struct Node *)(n))->ln_Succ)  
-)
-
-#define ForeachNodeSafe(l,n,n2)  
-for (  
- n = (void *)(((struct List *)(l))->lh_Head);  
- (n2 = (void *)((struct Node *)(n))->ln_Succ);  
- n = (void *)n2  
-)
-
-#define ListLength(list,count)  
-do {  
- struct Node *n;  
- count = 0;  
- ForeachNode(list,n) count++;  
-} while (0)
-#endif
 #endif
 
 #define ForeachNode(list, node) \
@@ -145,7 +104,6 @@ VOID WritePixelArrayAlpha(APTR src, UWORD srcx, UWORD srcy, UWORD srcmod,
     struct RastPort *rp, UWORD destx, UWORD desty, UWORD width,
     UWORD height, ULONG globalalpha);
 
-//ULONG DoSuperNew(struct IClass *cl, APTR obj, ULONG tag1, ...);
 Object *DoSuperNew(struct IClass *cl, Object *obj, Tag tag1, ...);
 #endif
 

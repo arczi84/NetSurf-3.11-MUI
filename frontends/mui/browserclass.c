@@ -319,49 +319,6 @@ static void content_ready_callback(struct browser_window *bw, void *user_data)
     }
 }
 
-// ====== KONIEC NOWEGO KODU ======
-
-#if 0
-// Callback redraw (podobny do ami_redraw_callback)
-static void mui_redraw_callback(void *p)
-{
-    struct Data *data = (struct Data *)p;
-    
-    LOG(("DEBUG: mui_redraw_callback called"));
-    
-    if (data && data->redraw_pending) {
-        LOG(("DEBUG: Processing pending redraw"));
-        data->redraw_pending = false;
-        mui_redraw_pending = false;
-        
-        // Wykonaj faktyczny redraw
-        MUI_Redraw(_app(obj), MADF_DRAWOBJECT);
-    }
-}
-
-// Funkcja planująca redraw (podobna do ami_schedule_redraw)
-void mui_schedule_redraw(struct Data *data, bool full_redraw)
-{
-    int ms = 1;
-    
-    LOG(("DEBUG: mui_schedule_redraw called, full_redraw=%d", full_redraw));
-    
-    if (full_redraw) {
-        data->redraw_pending = true;
-        mui_redraw_pending = true;
-    }
-    
-    // Zaplanuj callback za 1ms
-    mui_schedule(ms, mui_redraw_callback, data);
-}
-
-// Funkcja usuwająca redraw (podobna do ami_schedule_redraw_remove)
-static void mui_schedule_redraw_remove(struct Data *data)
-{
-    LOG(("DEBUG: mui_schedule_redraw_remove called"));
-    schedule_remove(mui_redraw_callback, data);
-}
-#endif
 
 void textinput_enable(struct browser_window *bw)
 {
@@ -864,8 +821,7 @@ DEFMMETHOD(Show)
             data->mwidth = mwidth;
             data->mheight = mheight;
             data->changed = 1;
-            browser_window_reformat(data->browser, false, mwidth, mheight); //arczi shows orange rectangle for a sec
-           //browser_window_reformat(bw,  bw->width, bw->height);
+            browser_window_reformat(data->browser, false, mwidth, mheight);
             LOG(("DEBUG: Browser window reformatted to %lux%lu", mwidth, mheight));
         }
 

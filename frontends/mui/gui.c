@@ -1312,7 +1312,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		break;
 
 	case GUI_POINTER_POINT:
-		pointertype = POINTERTYPE_LINK;//SELECTLINK;
+		pointertype = POINTERTYPE_LINK;
 		LOG(("DEBUG: GUI_POINTER_POINT -> POINTERTYPE_LINK = %d", pointertype));
 		break;
 
