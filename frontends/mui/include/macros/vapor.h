@@ -20,7 +20,6 @@
 #include <intuition/classes.h>
 #include <clib/alib_protos.h>
 #include <SDI_compiler.h>
-#include "utils/log0.h"
 /* MUI Macros */
 #ifndef MAKE_ID
 #define MAKE_ID(a,b,c,d) ((ULONG) (a)<<24 | (ULONG) (b)<<16 | (ULONG) (c)<<8 | (ULONG) (d))
@@ -218,60 +217,60 @@ static ULONG __saveds __asm name##_Dispatcher( \
  */#define DECSUBCLASS_NC_DEB(super,name) static struct MUI_CustomClass *mcc##name; \
     ULONG create_##name(void) \
     { \
-        LOG(("DEBUG: Creating class " #name ", sizeof(Data)=%ld\n", (long)sizeof(struct Data))); \
-        LOG(("DEBUG: Superclass: " #super "\n")); \
+        kprintf("DEBUG: Creating class " #name ", sizeof(Data)=%ld\n", (long)sizeof(struct Data)); \
+        kprintf("DEBUG: Superclass: " #super "\n"); \
         if (!(mcc##name = (struct MUI_CustomClass *)MUI_CreateCustomClass(NULL, super, NULL, sizeof(struct Data), DISPATCHERREF))) { \
-            LOG(("ERROR: MUI_CreateCustomClass failed for " #name "\n")); \
+            kprintf("ERROR: MUI_CreateCustomClass failed for " #name "\n"); \
             return (FALSE); \
         } \
-        LOG(("DEBUG: Class " #name " created successfully, mcc=" #name "=%p\n", mcc##name)); \
+        kprintf("DEBUG: Class " #name " created successfully, mcc=" #name "=%p\n", mcc##name); \
         if (MUIMasterBase->lib_Version >= 20) { \
             mcc##name->mcc_Class->cl_ID = #name; \
-            LOG(("DEBUG: Set cl_ID=" #name "\n")); \
+            kprintf("DEBUG: Set cl_ID=" #name "\n"); \
         } \
         return (TRUE); \
     } \
     void delete_##name(void) \
     { \
-        LOG(("DEBUG: Deleting class " #name "\n")); \
+        kprintf("DEBUG: Deleting class " #name "\n"); \
         if (mcc##name) { \
             MUI_DeleteCustomClass(mcc##name); \
-            LOG(("DEBUG: Class " #name " deleted\n")); \
+            kprintf("DEBUG: Class " #name " deleted\n"); \
         } \
     } \
     struct IClass *get##name(void) \
     { \
-        LOG(("DEBUG: get" #name "() called, mcc" #name "=%p\n", mcc##name)); \
+        kprintf("DEBUG: get" #name "() called, mcc" #name "=%p\n", mcc##name); \
         if (!mcc##name) { \
-            LOG(("ERROR: mcc" #name " is NULL! create_" #name "() was not called\n")); \
+            kprintf("ERROR: mcc" #name " is NULL! create_" #name "() was not called\n"); \
             return NULL; \
         } \
-        LOG(("DEBUG: Returning class " #name ": %p\n", mcc##name->mcc_Class)); \
+        kprintf("DEBUG: Returning class " #name ": %p\n", mcc##name->mcc_Class); \
         return (mcc##name->mcc_Class); \
     } \
     APTR get##name##root(void) \
     { \
-        LOG(("DEBUG: get" #name "root() called\n")); \
+        kprintf("DEBUG: get" #name "root() called\n"); \
         return (mcc##name); \
     }
 
 #define DECSUBCLASS_NC(super,name) static struct MUI_CustomClass *mcc##name; \
 	ULONG create_##name(void) \
 	{ \
-		LOG(("DEBUG: Creating class " #name ", sizeof(struct Data)=%ld\n", (long)sizeof(struct Data))); \
-		LOG(("DEBUG: Superclass: " super "\n")); \
-		LOG(("DEBUG: Calling MUI_CreateCustomClass...\n")); \
+		kprintf("DEBUG: Creating class " #name ", sizeof(struct Data)=%ld\n", (long)sizeof(struct Data)); \
+		kprintf("DEBUG: Superclass: " super "\n"); \
+		kprintf("DEBUG: Calling MUI_CreateCustomClass...\n"); \
 		mcc##name = (struct MUI_CustomClass *)MUI_CreateCustomClass(NULL, super, NULL, sizeof(struct Data), DISPATCHERREF); \
 		if (!mcc##name) { \
-			LOG(("ERROR: MUI_CreateCustomClass failed for " #name "\n")); \
+			kprintf("ERROR: MUI_CreateCustomClass failed for " #name "\n"); \
 			return (FALSE); \
 		} \
-		LOG(("DEBUG: Class " #name " created successfully, mcc=%p\n", mcc##name)); \
+		kprintf("DEBUG: Class " #name " created successfully, mcc=%p\n", mcc##name); \
 		if (MUIMasterBase && MUIMasterBase->lib_Version >= 20) { \
-			LOG(("DEBUG: Setting cl_ID for " #name "\n")); \
+			kprintf("DEBUG: Setting cl_ID for " #name "\n"); \
 			mcc##name->mcc_Class->cl_ID = #name; \
 		} \
-		LOG(("DEBUG: Class " #name " initialization complete\n")); \
+		kprintf("DEBUG: Class " #name " initialization complete\n"); \
 		return (TRUE); \
 	} \
 	void delete_##name(void) \
