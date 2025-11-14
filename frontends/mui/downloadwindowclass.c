@@ -21,6 +21,8 @@
 #include <proto/intuition.h>
 #include <proto/utility.h>
 
+#include <string.h>
+
 #include "mui/extrasrc.h"
 #include "mui/gui.h"
 #include "mui/mui.h"
@@ -47,10 +49,27 @@ MUI_HOOK(download_display, STRPTR *array, struct download *dl)
 		STATIC TEXT buf1[16];
 		STATIC TEXT buf2[16];
 		STATIC TEXT buf3[16];
+		const UQUAD size = dl->size;
+		const UQUAD done = dl->done;
+		UQUAD percent = 0;
 
-		NewRawDoFmt("%lld", NULL, buf1, dl->size);
-		NewRawDoFmt("%lld", NULL, buf2, dl->done);
-		NewRawDoFmt("%ld%%", NULL, buf3, (ULONG)((float)dl->done / (float)dl->size * 100.f));
+		NewRawDoFmt("%llu", NULL, buf1, size);
+		NewRawDoFmt("%llu", NULL, buf2, done);
+
+		if (size > 0)
+		{
+			if (done >= size)
+				percent = 100;
+			else
+				percent = (done * 100ULL) / size;
+
+			NewRawDoFmt("%ld%%", NULL, buf3, (ULONG)percent);
+		}
+		else
+		{
+			strncpy(buf3, "N/A", sizeof(buf3));
+			buf3[sizeof(buf3) - 1] = '\0';
+		}
 
 		array[0] = dl->filename;
 		array[1] = buf1;
