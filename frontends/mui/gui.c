@@ -94,6 +94,7 @@
 #include "mui/utils.h"
 #include "html/form_internal.h"
 #include "utils/messages.h"
+#include "utils/nsurl.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
@@ -156,6 +157,8 @@ struct Library *CodesetsBase;
 STATIC struct MinList download_list = { (APTR)&download_list.mlh_Tail, NULL, (APTR)&download_list };
 STATIC struct MinList window_list = { (APTR)&window_list.mlh_Tail, NULL, (APTR)&window_list };
 STATIC LONG process_priority;
+
+static struct gui_download_table mui_download_table;
 
 static bool frontend_has_pending_work(void)
 {
@@ -1468,62 +1471,95 @@ void gui_window_set_scale(struct gui_window *g, float scale)
 {
 }
 
-struct gui_download_window *gui_download_window_create(const char *url,
-		const char *mime_type, struct fetch *fetch,
-		unsigned int total_size, struct gui_window *gui)
+static void
+mui_download_window_cleanup(struct gui_download_window *dw)
 {
-	struct gui_download_window *dw;
+	if (!dw)
+		return;
 
-	dw = AllocMem(sizeof(*dw), MEMF_ANY);
-
-	if (dw)
+	if (dw->fh)
 	{
-		struct download *dl;
-		ULONG ok;
-
-		dl = (APTR)methodstack_push_sync(application, 2, MM_Application_Download, url);
-		ok = 0;
-
-		if (dl)
-		{
-			BPTR lock;
-
-			dw->dl = dl;
-			dl->size = total_size;
-
-			lock = Lock(dl->path, ACCESS_READ);
-
-			if (lock)
-			{
-				lock = CurrentDir(lock);
-
-				dw->fh = OpenAsync(dl->filename, MODE_WRITE, 8192);
-
-				if (dw->fh)
-				{
-					ADDTAIL(&download_list, dw);
-					SetComment(dl->filename, url);
-					ok = 1;
-				}
-
-				UnLock(CurrentDir(lock));
-			}
-		}
-
-		if (!ok)
-		{
-			if (dl)
-			{
-				methodstack_push_sync(application, 2, MM_Application_DownloadError, dw->dl);
-			}
-			else
-			{
-				FreeMem(dw, sizeof(*dw));
-			}
-
-			dw = NULL;
-		}
+		CloseAsync(dw->fh);
+		dw->fh = NULL;
 	}
+
+	if (dw->node.mln_Succ || dw->node.mln_Pred)
+	{
+		REMOVE(dw);
+		dw->node.mln_Succ = NULL;
+		dw->node.mln_Pred = NULL;
+	}
+
+	if (dw->ctx)
+	{
+		download_context_destroy(dw->ctx);
+		dw->ctx = NULL;
+	}
+
+	FreeMem(dw, sizeof(*dw));
+}
+
+struct gui_download_window *gui_download_window_create(download_context *ctx,
+		struct gui_window *gui)
+{
+	const char *url = nsurl_access(download_context_get_url(ctx));
+	const char *suggested = download_context_get_filename(ctx);
+	struct gui_download_window *dw;
+	struct download *dl;
+	BPTR drawer_lock;
+	BPTR previous_dir;
+
+	(void)gui; /* Currently unused */
+
+	dw = AllocMem(sizeof(*dw), MEMF_ANY | MEMF_CLEAR);
+
+	if (dw == NULL)
+		return NULL;
+
+	dl = (APTR)methodstack_push_sync(application, 3,
+			MM_Application_Download,
+			(IPTR)url,
+			(IPTR)suggested);
+
+	if (dl == NULL)
+	{
+		FreeMem(dw, sizeof(*dw));
+		return NULL;
+	}
+
+	dw->dl = dl;
+	dw->ctx = ctx;
+	dl->size = download_context_get_total_length(ctx);
+	dl->done = 0;
+
+	drawer_lock = Lock(dl->path, ACCESS_READ);
+	if (drawer_lock == 0)
+	{
+		methodstack_push_sync(application, 2, MM_Application_DownloadError, dl);
+		FreeMem(dw, sizeof(*dw));
+		return NULL;
+	}
+
+	previous_dir = CurrentDir(drawer_lock);
+	dw->fh = OpenAsync(dl->filename, MODE_WRITE, 8192);
+
+	if (dw->fh)
+	{
+		ADDTAIL(&download_list, dw);
+		if (url)
+			SetComment(dl->filename, url);
+	}
+	else
+	{
+		methodstack_push_sync(application, 2, MM_Application_DownloadError, dl);
+		CurrentDir(previous_dir);
+		UnLock(drawer_lock);
+		FreeMem(dw, sizeof(*dw));
+		return NULL;
+	}
+
+	CurrentDir(previous_dir);
+	UnLock(drawer_lock);
 
 	return dw;
 }
@@ -1798,7 +1834,7 @@ void main(int argc, char** argv)
 		.fetch = amiga_fetch_table,
 		.file = amiga_file_table,
 		.utf8 = amiga_utf8_table,
-		//.download = amiga_download_table,
+		.download = &mui_download_table,
 		.llcache = filesystem_llcache_table,
 		};
 	ret = netsurf_register(&mui_table);
@@ -1893,24 +1929,43 @@ while (!netsurf_quit) {
 	return 0;
 }
 
-void gui_download_window_data(struct gui_download_window *dw, const char *data, unsigned int size)
+static nserror gui_download_window_data(struct gui_download_window *dw, const char *data, unsigned int size)
 {
+	if (dw == NULL || dw->fh == NULL)
+		return NSERROR_SAVE_FAILED;
+
 	WriteAsync(dw->fh, (APTR)data, size);
-
 	dw->dl->done += size;
-
 	methodstack_push(application, 1, MM_Application_DownloadUpdate);
+
+	return NSERROR_OK;
 }
 
-void gui_download_window_error(struct gui_download_window *dw, const char *error_msg)
+static void gui_download_window_error(struct gui_download_window *dw, const char *error_msg)
 {
+	(void)error_msg;
+	if (dw == NULL)
+		return;
+
 	methodstack_push_sync(application, 2, MM_Application_DownloadError, dw->dl);
+	mui_download_window_cleanup(dw);
 }
 
-void gui_download_window_done(struct gui_download_window *dw)
+static void gui_download_window_done(struct gui_download_window *dw)
 {
+	if (dw == NULL)
+		return;
+
 	methodstack_push_sync(application, 2, MM_Application_DownloadDone, dw->dl);
+	mui_download_window_cleanup(dw);
 }
+
+static struct gui_download_table mui_download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
 
 //void gui_drag_save_object(gui_save_type type, struct hlcache_handle *c, struct gui_window *g)
 //{

@@ -425,6 +425,7 @@ DEFNEW
 		data->str_dldir = str_dldir;
 
 		NEWLIST(&data->windowlist);
+		set(obj, MA_Application_DownloadsInProgress, 0);
 
 		len = strlen("NetSurf ") + strlen(netsurf_version) + 1;
 		data->screentitle = AllocTaskPooled(len);
@@ -650,17 +651,23 @@ DEFSMETHOD(Application_Download)
 	GETDATA;
 	struct FileRequester *filereq;
 	struct download *dl;
+	CONST_STRPTR default_file;
+	CONST_STRPTR initial_drawer;
 
 	filereq = (struct FileRequester *)MUI_AllocAslRequest(ASL_FileRequest, NULL);
 	dl = NULL;
+	default_file = (msg->filename && msg->filename[0]) ? msg->filename : FilePart(msg->url);
+	if (!default_file || !default_file[0])
+		default_file = "download";
+	initial_drawer = data->download_dir ? data->download_dir : "RAM:";
 
 	if (filereq)
 	{
 		if (MUI_AslRequestTags(filereq,
 			ASLFR_TitleText, "NetSurf",
 			ASLFR_DoSaveMode,TRUE,
-			ASLFR_InitialFile, FilePart(msg->url),
-			ASLFR_InitialDrawer, data->download_dir,
+			ASLFR_InitialFile, default_file,
+			ASLFR_InitialDrawer, initial_drawer,
 			TAG_DONE))
 		{
 			ULONG size, filenamelen;
@@ -679,6 +686,9 @@ DEFSMETHOD(Application_Download)
 				strcpy(dl->path, filereq->fr_Drawer);
 
 				DoMethod(data->dlwin, MUIM_List_InsertSingle, dl, MUIV_List_Insert_Bottom);
+				set(data->dlwin, MUIA_Window_Open, TRUE);
+				IPTR in_progress = getv(obj, MA_Application_DownloadsInProgress);
+				set(obj, MA_Application_DownloadsInProgress, in_progress + 1);
 			}
 		}
 

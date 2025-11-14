@@ -255,7 +255,7 @@ enum
 struct MP_Application_AddBrowser     { ULONG MethodID; APTR context; };
 struct MP_Application_AskPasswordPDF { ULONG MethodID; STRPTR *owner; STRPTR *user; APTR ref; };
 struct MP_Application_CloseWindow    { ULONG MethodID; APTR windownode; };
-struct MP_Application_Download       { ULONG MethodID; STRPTR url; };
+struct MP_Application_Download       { ULONG MethodID; STRPTR url; STRPTR filename; };
 struct MP_Application_DownloadDone   { ULONG MethodID; APTR entry; };
 struct MP_Application_DownloadError  { ULONG MethodID; APTR entry; };
 struct MP_Application_KillWindow     { ULONG MethodID; APTR window; };

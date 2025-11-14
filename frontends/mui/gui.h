@@ -27,6 +27,8 @@
 
 #include "mui/extrasrc.h"
 
+struct download_context;
+
 extern struct SignalSemaphore gfx_semaphore;
 
 struct RastPort;
@@ -51,6 +53,7 @@ struct gui_download_window
 {
 	struct MinNode   node;
 	struct download *dl;
+	struct download_context *ctx;
 	APTR fh;
 };
 
