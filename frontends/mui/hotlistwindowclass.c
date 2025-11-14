@@ -64,7 +64,23 @@ STATIC CONST TEXT tail[] = "</body></html>";
 STATIC CONST TEXT start[] = "<ul>\n";
 STATIC CONST TEXT end[] = "</ul>\n";
 
-extern xmlNode *options_find_tree_element(xmlNode *node, const char *name);
+static xmlNode *options_find_tree_element(xmlNode *node, const char *name)
+{
+	if (node == NULL || name == NULL)
+		return NULL;
+
+	for (xmlNode *current = node; current; current = current->next)
+	{
+		if (current->type == XML_ELEMENT_NODE && strcmp((const char *)current->name, name) == 0)
+			return current;
+
+		xmlNode *child = options_find_tree_element(current->children, name);
+		if (child)
+			return child;
+	}
+
+	return NULL;
+}
 
 static void options_load_tree_directory(APTR obj, xmlNode *ul, struct MUIS_Listtree_TreeNode * node);
 

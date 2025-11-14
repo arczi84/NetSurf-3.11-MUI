@@ -55,7 +55,7 @@ static const struct classdesc cd[] =
 	CLASSENT(addressbargroup),
 	CLASSENT(findtext),
 	CLASSENT(pdf),
-	//CLASSENT(hotlistwindow), //disabled for now
+	CLASSENT(hotlistwindow),
 	CLASSENT(downloadwindow),
 	//CLASSENT(loginwindow),
 	CLASSENT(quicklinkgroup),

@@ -357,7 +357,7 @@ DEFNEW
 	APTR dlwin, hotlistwin;
 
 	obj = DoSuperNew(cl, obj,
-		//SubWindow, hotlistwin = NewObject(gethotlistwindowclass(), NULL, TAG_DONE), //disabled
+		SubWindow, hotlistwin = NewObject(gethotlistwindowclass(), NULL, TAG_DONE),
 		SubWindow, dlwin =  NewObject(getdownloadwindowclass(), NULL, TAG_DONE),
 
 		SubWindow, prefswin = WindowObject,

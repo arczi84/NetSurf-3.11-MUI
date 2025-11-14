@@ -71,7 +71,8 @@ LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 LDFLAGS += $(shell $(PKG_CONFIG) --libs tre)
  # CFLAGS += -noixemul -std=c99 -I. -Dnsmui -mstring -mmultiple -mcpu=750 -idirafter/usr/local/include -Ifrontends/mui/include -D__MORPHOS_SHAREDLIBS -DAROS_ALMOST_COMPATIBLE -U__STRICT_ANSI__ -DMULTITHREADED
  # LDFLAGS += -Wl,-Map=file.map -noixemul -lxml2 -lcurl -lrxspencer -lssl -lcrypto -liconv -lttengine
-   LDFLAGS += -Wl,-Map=file.map  -lcurl  -lamisslstubs  -lamisslauto -liconv -lamiga2 -ldebug # -lttengine -lauto 
+  LDFLAGS += -Wl,-Map=file.map  -lcurl  -lamisslstubs  -lamisslauto -liconv -lamiga2 -ldebug # -lttengine -lauto 
+  LDFLAGS += -lxml2
    LDFLAGS += -ldom -lhubbub -lparserutils -lwapcaplet -lnslog -lz
   LDFLAGS += -lnsbmp
    LDFLAGS += -lpbl -liconv -lunix -lm -lc -lnet -lft2 -ljpeg-turbo
@@ -83,7 +84,7 @@ S_MUI := netsurf.c methodstack.c applicationclass.c browserclass.c historylistcl
 	transferanimclass.c navigationbarclass.c addressbarclass.c titleclass.c titlelabelclass.c toolbuttonclass.c \
 	quicklinkgroupclass.c quicklinkbuttongroupclass.c quicklinkparentgroupclass.c \
 	searchbarclass.c gui.c findtextclass.c popstringclass.c loginwindowclass.c \
-	downloadwindowclass.c  history.c \
+  hotlistwindowclass.c downloadwindowclass.c  history.c \
 	schedule.c thumbnail.c bitmap.c font.c utf8.c login.c	\
   plotters.c save_pdf.c pdfclass.c print.c \
 	clipboard.c save_complete.c fetch.c findfile.c\
