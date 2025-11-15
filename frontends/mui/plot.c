@@ -23,6 +23,78 @@
 
 bool plot_initiated = false;
 void debug_screen_capabilities(void);
+static VOID SetRGBColor(struct RastPort *rp, ULONG rgb_color, BOOL is_background);
+
+static bool text_contains_placeholders(const char *text, size_t length)
+{
+    for (size_t i = 0; i < length; i++) {
+        if ((unsigned char)text[i] == MUI_BULLET_PLACEHOLDER) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static int draw_placeholder_bullet(struct RastPort *rp, int pen_x, int baseline_y,
+    const struct plot_font_style *fstyle, ULONG fg_pixel)
+{
+    int tx_height = rp->TxHeight ? rp->TxHeight : 12;
+    int tx_baseline = rp->TxBaseline ? rp->TxBaseline : (tx_height - 3);
+    int diameter = MAX(4, tx_height / 3);
+    int radius = MAX(2, diameter / 2);
+    int center_x = pen_x + radius;
+    int top = baseline_y - tx_baseline;
+    int center_y = top + (tx_height / 2);
+
+    SetRGBColor(rp, fg_pixel, FALSE);
+
+    for (int dy = -radius; dy <= radius; dy++) {
+        int row_y = center_y + dy;
+        int horizontal = radius;
+        while (horizontal > 0 && (horizontal * horizontal + dy * dy) > (radius * radius)) {
+            horizontal--;
+        }
+        int start_x = center_x - horizontal;
+        int end_x = center_x + horizontal;
+        Move(rp, start_x, row_y);
+        Draw(rp, end_x, row_y);
+    }
+
+    return diameter + 2;
+}
+
+static void draw_text_with_placeholders(struct RastPort *rp,
+    const char *text,
+    size_t length,
+    int start_x,
+    int baseline_y,
+    const struct plot_font_style *fstyle,
+    ULONG fg_pixel)
+{
+    int current_x = start_x;
+    size_t chunk_start = 0;
+
+    for (size_t i = 0; i < length; i++) {
+        if ((unsigned char)text[i] != MUI_BULLET_PLACEHOLDER)
+            continue;
+
+        size_t chunk_len = i - chunk_start;
+        if (chunk_len > 0) {
+            Move(rp, current_x, baseline_y);
+            Text(rp, text + chunk_start, chunk_len);
+            current_x += TextLength(rp, text + chunk_start, chunk_len);
+        }
+
+        current_x += draw_placeholder_bullet(rp, current_x, baseline_y, fstyle,
+            fg_pixel);
+        chunk_start = i + 1;
+    }
+
+    if (chunk_start < length) {
+        Move(rp, current_x, baseline_y);
+        Text(rp, text + chunk_start, length - chunk_start);
+    }
+}
 
 /* Fixed color conversion - handles NetSurf ABGR format properly */
 static ULONG ConvertNetSurfColor(colour ns)
@@ -135,75 +207,6 @@ static BOOL ensure_screen_available(struct RastPort *rp)
     LOG(("ERROR: Could not get screen"));
     return FALSE;
 }
-
-/* Enhanced fallback color mapping with better NetSurf color handling */
-static LONG get_fallback_pen(ULONG rgb_color, struct ViewPort *vp) 
-{
-    UBYTE r = (rgb_color >> 16) & 0xFF;
-    UBYTE g = (rgb_color >> 8) & 0xFF;
-    UBYTE b = rgb_color & 0xFF;
-    
-    LOG(("get_fallback_pen: analyzing color r=%d g=%d b=%d", r, g, b));
-    
-    /* Precise matches for commonly used NetSurf colors */
-    switch (rgb_color & 0x00FFFFFF) { /* Mask out alpha */
-        case 0x000000: return 0; /* Black */
-        case 0xFFFFFF: return 1; /* White */
-        case 0xFF0000: return 2; /* Red */
-        case 0x00FF00: return 3; /* Green */  
-        case 0x0000FF: return 4; /* Blue */
-        case 0xFFFF00: return 5; /* Yellow */
-        case 0xFF00FF: return 6; /* Magenta */
-        case 0x00FFFF: return 7; /* Cyan */
-        case 0x808080: return 8; /* Gray */
-    }
-    
-    /* Special mappings for NetSurf CSS colors - after proper conversion */
-    ULONG pure_color = rgb_color & 0x00FFFFFF;
-    
-    /* Gray levels - better mapping */
-    if (r == g && g == b) { /* This is gray */
-        if (r < 32) return 0;   /* Very dark -> black */
-        if (r < 64) return 8;   /* Dark gray */  
-        if (r < 96) return 9;   /* Medium dark gray */
-        if (r < 128) return 10; /* Medium gray */
-        if (r < 160) return 11; /* Light gray */
-        if (r < 224) return 12; /* Very light gray */
-        return 1; /* Very light -> white */
-    }
-    
-    /* Primary colors by dominant component */
-    if (r > g + 40 && r > b + 40) {
-        if (r > 200) return 2; /* Red */
-        if (r > 128) return 19; /* Dark red */
-        return 20; /* Very dark red */
-    }
-    
-    if (g > r + 40 && g > b + 40) {
-        if (g > 200) return 3; /* Green */
-        if (g > 128) return 21; /* Dark green */
-        return 22; /* Very dark green */
-    }
-    
-    if (b > r + 40 && b > g + 40) {
-        if (b > 200) return 4; /* Blue */
-        if (b > 128) return 23; /* Dark blue */
-        return 24; /* Very dark blue */
-    }
-    
-    /* Mixed colors */
-    if (r > 200 && g > 200 && b < 100) return 5; /* Yellow */
-    if (r > 200 && b > 200 && g < 100) return 6; /* Magenta */
-    if (g > 200 && b > 200 && r < 100) return 7; /* Cyan */
-    
-    /* Default fallback based on intensity */
-    ULONG intensity = (r + g + b);
-    if (intensity < 128) return 0; /* Dark -> black */
-    if (intensity > 600) return 1; /* Light -> white */
-    
-    return 8; /* Medium gray for unknown colors */
-}
-
 
 
 void debug_screen_capabilities(void);
@@ -392,17 +395,29 @@ mui_text(const struct redraw_context *ctx,
     if (!ok && node && node->sysfont) {
         struct converted_text measure;
         mui_prepare_converted_text(text, length, &measure);
+        const char *render_text = measure.text;
+        size_t render_len = measure.length;
 
-        Move(rp, x, y);
-        Text(rp, measure.text, measure.length);
+        if (text_contains_placeholders(render_text, render_len)) {
+            draw_text_with_placeholders(rp, render_text, render_len, x, y,
+                fstyle, fg_pixel);
+        } else {
+            Move(rp, x, y);
+            Text(rp, render_text, render_len);
+        }
 
         mui_destroy_converted_text(&measure);
         ok = true;
     }
 
     if (!ok && rp->Font) {
-        Move(rp, x, y);
-        Text(rp, text, length);
+        if (text_contains_placeholders(text, length)) {
+            draw_text_with_placeholders(rp, text, length, x, y, fstyle,
+                fg_pixel);
+        } else {
+            Move(rp, x, y);
+            Text(rp, text, length);
+        }
         ok = true;
     }
 
@@ -437,7 +452,7 @@ mui_rectangle(const struct redraw_context *ctx,
              rect->x0, rect->y0, rect->x1, rect->y1, pixel));
         
         /* For RTG screens, try direct pixel writing first */
-        //if (depth >= 15 && CyberGfxBase) {
+        if (depth >= 15 && CyberGfxBase) {
             LONG result = FillPixelArray(rp, rect->x0, rect->y0, 
                                         rect->x1 - rect->x0, rect->y1 - rect->y0, pixel);
             //Delay(2);
@@ -448,7 +463,7 @@ mui_rectangle(const struct redraw_context *ctx,
             
             }
             LOG(("mui_rectangle_enhanced: FillPixelArray failed, using pen method"));
-       // }
+        }
 
         /* Pen-based filling for palette modes or RTG fallback */
         SetRGBColor(rp, pixel, FALSE);

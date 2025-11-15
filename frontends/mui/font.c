@@ -224,6 +224,43 @@ static unsigned char convert_codepoint_to_iso(uint32_t utf8_char)
             return polish_char_map[i].iso_code;
         }
     }
+
+    /* Provide ASCII/ISO fallbacks for common glyphs that Amiga fonts lack. */
+    switch (utf8_char) {
+    case 0x00A0: /* NO-BREAK SPACE */
+    case 0x2000: /* EN QUAD */
+    case 0x2001: /* EM QUAD */
+    case 0x2002: /* EN SPACE */
+    case 0x2003: /* EM SPACE */
+    case 0x2004: /* THREE-PER-EM SPACE */
+    case 0x2005: /* FOUR-PER-EM SPACE */
+    case 0x2006: /* SIX-PER-EM SPACE */
+    case 0x2007: /* FIGURE SPACE */
+    case 0x2008: /* PUNCTUATION SPACE */
+    case 0x2009: /* THIN SPACE */
+    case 0x200A: /* HAIR SPACE */
+    case 0x200B: /* ZERO WIDTH SPACE */
+    case 0x202F: /* NARROW NO-BREAK SPACE */
+    case 0x205F: /* MEDIUM MATHEMATICAL SPACE */
+    case 0x3000: /* IDEOGRAPHIC SPACE */
+        return ' ';
+    case 0x00AB: /* LEFT-POINTING DOUBLE ANGLE QUOTATION MARK */
+    case 0x2039: /* SINGLE LEFT-POINTING ANGLE QUOTATION MARK */
+        return '<';
+    case 0x00BB: /* RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK */
+    case 0x203A: /* SINGLE RIGHT-POINTING ANGLE QUOTATION MARK */
+        return '>';
+    case 0x2022: /* BULLET */
+    case 0x25CF: /* BLACK CIRCLE */
+        return MUI_BULLET_PLACEHOLDER;
+    case 0x25CB: /* WHITE CIRCLE */
+        return 'o';
+    case 0x25A0: /* BLACK SQUARE */
+    case 0x25AA: /* BLACK SMALL SQUARE */
+        return '#';
+    default:
+        break;
+    }
     
     return '?';
 }
