@@ -389,20 +389,18 @@ mui_text(const struct redraw_context *ctx,
     bool ok = false;
 
     if (!ok && node && node->sysfont) {
-    struct converted_text measure;
-    mui_prepare_converted_text(text, length, &measure);
+        struct converted_text measure;
+        mui_prepare_converted_text(text, length, &measure);
 
-    int baseline_y = y + node->sysfont->tf_Baseline - 11;
-    Move(rp, x, baseline_y);
-    Text(rp, measure.text, measure.length);
+        Move(rp, x, y);
+        Text(rp, measure.text, measure.length);
 
-    mui_destroy_converted_text(&measure);
+        mui_destroy_converted_text(&measure);
         ok = true;
     }
 
     if (!ok && rp->Font) {
-        int baseline_y = y + rp->Font->tf_Baseline - 13;
-        Move(rp, x, baseline_y);
+        Move(rp, x, y);
         Text(rp, text, length);
         ok = true;
     }
@@ -417,101 +415,6 @@ mui_text(const struct redraw_context *ctx,
     return ok ? NSERROR_OK : NSERROR_INVALID;
 }
 
-nserror
-mui_text5(const struct redraw_context *ctx,
-         const struct plot_font_style *fstyle,
-         int x,
-         int y,
-         const char *text,
-         size_t length)
-{
-    struct RastPort *rp = (struct RastPort *)ctx->priv;
-    if (!rp || !text || length == 0) return NSERROR_OK;
-    
-    /* Convert colors properly */
-    ULONG fg_pixel = ConvertNetSurfColor(fstyle->foreground);
-    ULONG bg_pixel = 0xFFFFFF; /* Default white background */
-    
-    /* CRITICAL FIX: Only use background color if it's NOT transparent AND different from foreground */
-    bool use_background = (fstyle->background != NS_TRANSPARENT);
-    if (use_background) {
-        bg_pixel = ConvertNetSurfColor(fstyle->background);
-        
-        /* SAFETY CHECK: If background and foreground are too similar, use contrasting background */
-        UBYTE fg_r = (fg_pixel >> 16) & 0xFF;
-        UBYTE fg_g = (fg_pixel >> 8) & 0xFF;
-        UBYTE fg_b = fg_pixel & 0xFF;
-        UBYTE bg_r = (bg_pixel >> 16) & 0xFF;
-        UBYTE bg_g = (bg_pixel >> 8) & 0xFF;
-        UBYTE bg_b = bg_pixel & 0xFF;
-        
-        /* Calculate color difference */
-        int diff = abs(fg_r - bg_r) + abs(fg_g - bg_g) + abs(fg_b - bg_b);
-        if (diff < 100) { /* Colors too similar */
-            /* Use contrasting background */
-            if ((fg_r + fg_g + fg_b) > 384) {
-                bg_pixel = 0x000000; /* Use black background for light text */
-            } else {
-                bg_pixel = 0xFFFFFF; /* Use white background for dark text */
-            }
-            LOG(("Text colors too similar, using contrasting background: fg=0x%06lX bg=0x%06lX", fg_pixel, bg_pixel));
-        }
-    }
-    
-    /* Open appropriate font */
-    APTR font_node = mui_open_font(rp, fstyle);
-    if (!font_node) {
-        LOG(("WARNING: No font available, using default"));
-    }
-    
-    struct fontnode *node = (struct fontnode *)font_node;
-    UBYTE oldDm = GetDrMd(rp);
-    
-    /* Set up drawing mode */
-    if (use_background) {
-        SetRGBColor(rp, bg_pixel, TRUE);  /* Set background pen */
-        SetRGBColor(rp, fg_pixel, FALSE); /* Set foreground pen */
-        SetDrMd(rp, JAM2); /* Use both foreground and background */
-        LOG(("Text with background: fg=0x%06lX bg=0x%06lX", fg_pixel, bg_pixel));
-    } else {
-        SetRGBColor(rp, fg_pixel, FALSE); /* Set foreground pen only */
-        SetDrMd(rp, JAM1); /* Use only foreground */
-        LOG(("Text without background: fg=0x%06lX", fg_pixel));
-    }
-    
-    bool ok = false;
-    
-    /* Try system font rendering */
-    if (!ok && node && node->sysfont) {
-    struct converted_text measure;
-    mui_prepare_converted_text(text, length, &measure);
-
-    int baseline_y = y + node->sysfont->tf_Baseline - 11;
-    Move(rp, x, baseline_y);
-    Text(rp, measure.text, measure.length);
-
-    mui_destroy_converted_text(&measure);
-        ok = true;
-    }
-    
-    /* Fallback to default font */
-    if (!ok && rp->Font) {
-        int baseline_y = y + rp->Font->tf_Baseline - 13;
-        Move(rp, x, baseline_y);
-        Text(rp, text, length);
-        ok = true;
-    }
-    
-    /* Restore drawing mode */
-    SetDrMd(rp, oldDm);
-    
-    /* Close font */
-    if (font_node) {
-        mui_close_font(rp, font_node);
-    }
-    
-    return ok ? NSERROR_OK : NSERROR_INVALID;
-}
 #ifndef DX
 #define DX 0
 #warning "DX not defined, using 0"

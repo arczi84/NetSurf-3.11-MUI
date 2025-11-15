@@ -691,8 +691,7 @@ mui_text2(const struct redraw_context *ctx,
             SetDrMd(rp, JAM1); /* Use only foreground */
         }
         
-        int baseline_y = y + (rp->Font ? rp->Font->tf_Baseline : 12) - 13;
-        Move(rp, x, baseline_y);
+        Move(rp, x, y);
         Text(rp, text, length);
         
         SetDrMd(rp, JAM1); /* Reset to default */
@@ -722,8 +721,7 @@ mui_text2(const struct redraw_context *ctx,
         struct converted_text converted;
         mui_prepare_converted_text(text, length, &converted);
 
-        int baseline_y = y + node->sysfont->tf_Baseline - 11;
-        Move(rp, x, baseline_y);
+    Move(rp, x, y);
         Text(rp, converted.text, converted.length);
 
         mui_destroy_converted_text(&converted);
@@ -732,8 +730,7 @@ mui_text2(const struct redraw_context *ctx,
     
     /* Fallback to default font */
     if (!ok && rp->Font) {
-        int baseline_y = y + rp->Font->tf_Baseline - 13;
-        Move(rp, x, baseline_y);
+    Move(rp, x, y);
         Text(rp, text, length);
         ok = true;
     }
@@ -797,9 +794,7 @@ mui_text1(const struct redraw_context *ctx,
         ULONG pixel = ConvertNetSurfColor(fstyle->foreground);
         SetRGBColor(rp, pixel, FALSE);
         
-        /* Użyj korekcji -13 jak w starej wersji dla fallback */
-        int baseline_y = y + (rp->Font ? rp->Font->tf_Baseline : 12) - 13;
-        Move(rp, x, baseline_y);
+        Move(rp, x, y);
         Text(rp, text, length);
         return NSERROR_OK;
     }
@@ -821,13 +816,10 @@ mui_text1(const struct redraw_context *ctx,
         struct converted_text rendered;
         mui_prepare_converted_text(text, length, &rendered);
 
-        /* Użyj tej samej korekcji co w starej wersji: baseline - 11 */
-        int baseline_y = y + node->sysfont->tf_Baseline - 11;
+       LOG(("DEBUG: Rendering text '%.*s' at (%d,%d), baseline=%d",
+           (int)rendered.length, rendered.text, x, y, node->sysfont->tf_Baseline));
         
-        LOG(("DEBUG: Rendering text '%.*s' at (%d,%d), baseline=%d, correction=-11", 
-             (int)rendered.length, rendered.text, x, baseline_y, node->sysfont->tf_Baseline));
-        
-        Move(rp, x, baseline_y);
+       Move(rp, x, y);
         Text(rp, rendered.text, rendered.length);
 
         mui_destroy_converted_text(&rendered);
@@ -838,10 +830,7 @@ mui_text1(const struct redraw_context *ctx,
     if (!ok && rp->Font) {
         LOG(("DEBUG: Using default RastPort font"));
         
-        /* Użyj tej samej korekcji co w starej wersji: baseline - 13 */
-        int baseline_y = y + rp->Font->tf_Baseline - 13;
-        
-        Move(rp, x, baseline_y);
+        Move(rp, x, y);
         Text(rp, text, length);
         ok = true;
     }
