@@ -62,6 +62,8 @@ BOOL needs_character_conversion(void);
 size_t convert_utf8_to_iso8859_2(const char *utf8_str, size_t utf8_len,
     char *iso_buffer, size_t iso_buffer_size);
 
+#define MUI_BULLET_PLACEHOLDER 0x07
+
 struct converted_text {
     const char *text;
     size_t length;

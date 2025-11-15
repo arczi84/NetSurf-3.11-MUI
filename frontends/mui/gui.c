@@ -639,7 +639,8 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	//nsoption_setnull_charp(url_file, strdup("PROGDIR:Resources/URLs"));
 	nsoption_setnull_charp(ca_bundle, strdup("PROGDIR:Resources/ca-bundle"));
 	nsoption_setnull_charp(ca_path, strdup("PROGDIR:Resources/ca-path"));
-	nsoption_setnull_charp(homepage_url, strdup("file:///PROGDIR:Resources/Welcome.html"));
+	nsoption_setnull_charp(homepage_url, strdup("about:welcome"));
+	nsoption_setnull_charp(cache_dir, strdup("PROGDIR:Resources/Cache"));
 
 	if (defaults != NULL) {
 		if (defaults[NSOPTION_redraw_tile_size_x].value.i <= 0) {
@@ -648,11 +649,11 @@ static nserror set_defaults(struct nsoption_s *defaults)
 		if (defaults[NSOPTION_redraw_tile_size_y].value.i <= 0) {
 			defaults[NSOPTION_redraw_tile_size_y].value.i = 100;
 		}
+		/* Nudge the default web font size for the MUI build (0.1pt units). */
+		defaults[NSOPTION_font_size].value.i = 140;
 	}
 
-	//nsoption_setnull_charp(cache_dir, strdup("PROGDIR:Resources/Cache"));
-	nsoption_setnull_charp(homepage_url, strdup("www.netsurf-browser.org/welcome"));
-
+	
 	if (nsoption_charp(cookie_file) == NULL ||
 	    nsoption_charp(cookie_jar) == NULL) {
 		NSLOG(netsurf, INFO,"Failed initialising cookie options");

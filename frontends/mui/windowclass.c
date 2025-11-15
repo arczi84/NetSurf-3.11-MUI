@@ -31,7 +31,7 @@
 #include "mui/mui.h"
 #include "mui/netsurf.h"
 #include "libraries/mui.h"
-#include "utils/log2.h"
+#include "utils/log0.h"
 
 extern int scale_cp;
 void mui_prefs_set_current_url(const char *url_string);
@@ -267,34 +267,9 @@ DEFGET
 
 DEFTMETHOD(Window_InsertBookmark)
 {
-    GETDATA;
-    LOG(("Inserting bookmark"));
-    STRPTR url = NULL;
-    STRPTR title = NULL;
-
-    if (data->active_browser)
-    {
-        url = (STRPTR)getv(data->active_browser, MA_Browser_URL);
-        title = (STRPTR)getv(data->active_browser, MA_Browser_Title);
-    }
-
-    if ((!url || url[0] == '\0') && data->addressbar)
-    {
-        url = (STRPTR)getv(data->addressbar, MUIA_String_Contents);
-    }
-
-    if (!url || url[0] == '\0')
-    {
-        LOG(("No URL available for bookmark"));
-        return 0;
-    }
-
-    if (!title || title[0] == '\0')
-    {
-        title = url;
-    }
-
-    return DoMethod(_app(obj), MM_HotlistWindow_Insert, title, url);
+    LOG(("Hotlist UI disabled; opening bookmarks page instead"));
+    DoMethod(_app(obj), MM_Application_OpenWindow, WINDOW_HOTLIST);
+    return 0;
 }
 
 DEFSMETHOD(Window_MenuAction)

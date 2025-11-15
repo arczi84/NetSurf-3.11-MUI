@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if 0 /* Hotlist window disabled while bookmarks HTML is used directly */
+
 #include <string.h>
 
 #include <clib/dos_protos.h> //FWritef
@@ -61,7 +63,7 @@ STATIC CONST TEXT header[] =
 };
 
 STATIC CONST TEXT tail[] = "</body></html>";
-STATIC CONST TEXT start[] = "<ul>\n";
+	return (IPTR)obj;
 STATIC CONST TEXT end[] = "</ul>\n";
 
 static xmlNode *options_find_tree_element(xmlNode *node, const char *name)
@@ -488,3 +490,5 @@ void hotlist_visited(struct content *content)
 		//mui_gui_hotlist_visited(content, hotlist, hotlist->root);
 	}
 }
+
+#endif /* Hotlist window disabled while bookmarks HTML is used directly */

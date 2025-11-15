@@ -58,14 +58,14 @@ static const char *fetch_resource_paths[] = {
 	"welcome.html",
 	//"favicon.ico",
 	//"default.ico",
-	//"netsurf.png",
-//	"icons/arrow-l.png",
-	//"icons/content.png",
-//	"icons/directory.png",
-//	"icons/directory2.png",
-//	"icons/hotlist-add.png",
-	//"icons/hotlist-rmv.png",
-//	"icons/search.png"
+	"netsurf.png",
+	"icons/arrow-l.png",
+	"icons/content.png",
+	"icons/directory.png",
+	"icons/directory2.png",
+	"icons/hotlist-add.png",
+	"icons/hotlist-rmv.png",
+	"icons/search.png"
 };
 
 /**

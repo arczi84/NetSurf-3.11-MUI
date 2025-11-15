@@ -1,0 +1,13 @@
+# NetSurf cookies file.
+#
+# Lines starting with a '#' are comments, blank lines are ignored.
+#
+# All lines prior to "Version:	102" are discarded.
+#
+# Version	Domain	Domain from Set-Cookie	Path	Path from Set-Cookie	Secure	HTTP-Only	Expires	Last used	No destroy	Name	Value	Value was quoted	Scheme	URL	Comment
+Version:	102
+0	.wikipedia.org	1	/	1	1	1	1765972800	1763211302	0	WMF-Last-Access-Global	15-Nov-2025	0	unused	unused	
+0	.wikipedia.org	1	/	1	1	1	1794614400	1763211302	0	WMF-Uniq	SZ8XBBiJIBYQ1zKh8FW3KAKrAAEBAFvd-6wshC-kFRDU4FYsQf7FR35UxmQHLzjF	0	unused	unused	
+0	en.wikipedia.org	0	/	1	1	1	1765972800	1763211302	0	WMF-Last-Access	15-Nov-2025	0	https	https://en.wikipedia.org/wiki/Main_Page	
+0	en.wikipedia.org	0	/	1	1	1	1763251200	1763211302	0	WMF-DP	271	0	https	https://en.wikipedia.org/wiki/Main_Page	
+0	www.ppa.pl	0	/	1	1	1	1763229885	1763226288	0	ads_frq	1	0	https	https://www.ppa.pl/	

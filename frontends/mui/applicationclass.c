@@ -39,12 +39,16 @@
 #include "mui/mui.h"
 #include "mui/netsurf.h"
 #include "mui/utils.h"
+#include "netsurf/browser_window.h"
+#include "utils/errors.h"
+#include "utils/file.h"
+#include "utils/nsurl.h"
 
 extern bool restart;
 extern bool reload_bw;
 int OpenPrefs(void);
 
-#include "utils/log2.h"
+#include "utils/log0.h"
 
 struct windownode
 {
@@ -59,7 +63,6 @@ struct Data
 	struct windownode *active_window;
 
 	STRPTR screentitle;			// screen title (NetSurf 2.0)
-	APTR hotlistwin;
 	APTR dlwin;
 	APTR prefswin;
 	APTR aboutwin;
@@ -251,8 +254,30 @@ STATIC LONG Rexx(struct Hook *h, APTR obj, IPTR *params)
 							netsurf_add_job(NULL, JOB_NEW_PAGE, node);
 						}
 						#else
-						LOG(("DEBUG: REXX_OPEN: url=%s, app=%p\n", url, app));
-						browser_window_create((char *)getv(app, MA_Application_Homepage), 0, 0, true, false);
+						LOG(("DEBUG: REXX_OPEN (new window): url=%s, app=%p\n", url, app));
+						CONST_STRPTR target_url = (url && url[0]) ? url : (CONST_STRPTR)getv(app, MA_Application_Homepage);
+						if (!target_url || target_url[0] == '\0')
+						{
+							LOG(("REXX_OPEN: No valid URL available"));
+							break;
+						}
+
+						struct nsurl *ns_target = NULL;
+						nserror create_err = nsurl_create(target_url, &ns_target);
+						if (create_err != NSERROR_OK)
+						{
+							LOG(("REXX_OPEN: nsurl_create failed (%ld) for %s", (long)create_err, target_url));
+							break;
+						}
+
+						struct browser_window *new_bw = NULL;
+						nserror bw_err = browser_window_create(BW_CREATE_HISTORY, ns_target, NULL, NULL, &new_bw);
+						if (bw_err != NSERROR_OK)
+						{
+							LOG(("REXX_OPEN: browser_window_create failed (%ld) for %s", (long)bw_err, target_url));
+						}
+
+						nsurl_unref(ns_target);
 						#endif
 					}
 					else
@@ -340,6 +365,50 @@ static void insert_sorted(struct MinList *list, struct windownode *new)
 	ADDTAIL(list, new);
 }
 
+static bool open_bookmarks_page(Object *obj, struct Data *data)
+{
+	struct nsurl *url = NULL;
+	CONST_STRPTR url_s;
+	nserror error;
+	APTR request_window = NULL;
+
+	if (!data->active_window)
+	{
+		DoMethod(obj, MM_Application_NewWindow);
+	}
+
+	if (!data->active_window || !data->active_window->winobj)
+	{
+		LOG(("No active window available to show bookmarks page"));
+		return false;
+	}
+
+	request_window = data->active_window->winobj;
+	error = netsurf_path_to_nsurl(APPLICATION_BOOKMARKS_PAGE, &url);
+	if (error != NSERROR_OK)
+	{
+		LOG(("Unable to resolve bookmarks page '%s': %ld", APPLICATION_BOOKMARKS_PAGE, error));
+		MUI_Request(obj, request_window, 0,
+			"NetSurf",
+			"_OK",
+			"Unable to open %s (error %ld)", APPLICATION_BOOKMARKS_PAGE, (long)error);
+		return false;
+	}
+
+	url_s = nsurl_access(url);
+	if (!url_s)
+	{
+		LOG(("nsurl_access failed for bookmarks page"));
+		nsurl_unref(url);
+		return false;
+	}
+
+	LOG(("Navigating active window to bookmarks page: %s", url_s));
+	DoMethod(request_window, MM_Browser_Go, (IPTR)url_s);
+	nsurl_unref(url);
+	return true;
+}
+
 STATIC CONST CONST_STRPTR prefslist[] =
 {
 	"General",
@@ -359,10 +428,9 @@ DEFNEW
 	APTR menustrip;
 	APTR lv_fastlinks;
 	APTR str_homepage, str_dldir;
-	APTR dlwin, hotlistwin;
+	APTR dlwin;
 
 	obj = DoSuperNew(cl, obj,
-		SubWindow, hotlistwin = NewObject(gethotlistwindowclass(), NULL, TAG_DONE),
 		SubWindow, dlwin =  NewObject(getdownloadwindowclass(), NULL, TAG_DONE),
 
 		SubWindow, prefswin = WindowObject,
@@ -422,7 +490,6 @@ DEFNEW
 		GETDATA;
 		ULONG len;
 
-		data->hotlistwin = hotlistwin;
 		data->dlwin = dlwin;
 		data->prefswin = prefswin;
 
@@ -463,13 +530,11 @@ DEFNEW
 	APTR menustrip;
 	APTR lv_fastlinks;
 	APTR str_homepage, str_dldir;
-	APTR dlwin, hotlistwin;
-	#warning "Disabled hotlistwin and dlwin creation for now, uncomment if needed"
 #if 0
-	LOG(("DEBUG: Before creating hotlistwin\n"));
-	hotlistwin = NewObject(gethotlistwindowclass(), NULL, TAG_DONE);
-	LOG(("DEBUG: hotlistwin created: %p\n", hotlistwin));
-
+APTR dlwin;
+#endif
+#warning "Disabled dlwin creation for now, uncomment if needed"
+#if 0
 	LOG(("DEBUG: Before creating dlwin\n"));
 	dlwin = NewObject(getdownloadwindowclass(), NULL, TAG_DONE);
 	LOG(("DEBUG: dlwin created: %p\n", dlwin));
@@ -477,7 +542,6 @@ DEFNEW
 	LOG(("DEBUG: Before creating prefswin\n"));
 
 	obj = DoSuperNew(cl, obj,
-		SubWindow, hotlistwin,
 		SubWindow, dlwin,
 		SubWindow, prefswin = WindowObject,
 			MUIA_Window_ID, MAKE_ID('W','P','R','F'),
@@ -533,7 +597,6 @@ DEFNEW
 		GETDATA;
 		ULONG len;
 
-		//data->hotlistwin = hotlistwin;
 		//data->dlwin = dlwin;
 		//data->prefswin = prefswin;
 
@@ -565,12 +628,6 @@ DEFNEW
 
 #endif
 
-DEFSMETHOD(HotlistWindow_Insert)
-{
-	LOG(("DEBUG: FUNCTION=%s", __FUNCTION__));
-	GETDATA;
-	return DoMethodA(data->hotlistwin, (Msg)msg);
-}
 DEFGET
 {
     LOG(("DEBUG: FUNCTION=%s START", __FUNCTION__));
@@ -898,8 +955,8 @@ DEFSMETHOD(Application_OpenWindow)
 			break;
 
 		case WINDOW_HOTLIST:
-			win = data->hotlistwin;
-			break;
+			open_bookmarks_page(obj, data);
+			return 0;
 	}
 
 	return win ? set(win, MUIA_Window_Open, TRUE) : 0;
@@ -1173,7 +1230,6 @@ DECSMETHOD(Application_PrefsSave)
 DECSMETHOD(Application_SaveDocument)
 DECSMETHOD(Application_SetPasswordPDF)
 DECSMETHOD(Browser_Go)
-DECSMETHOD(HotlistWindow_Insert)
 DECSMETHOD(Window_MenuAction)
 ENDMTABLE
 

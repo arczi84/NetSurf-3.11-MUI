@@ -105,7 +105,7 @@ void ReadOptions(struct ObjApp * obj)
 	set(obj->STR_PA_Monospace, MUIA_String_Contents, nsoption_charp(fb_face_monospace));
 	set(obj->STR_PA_Cursive, MUIA_String_Contents, nsoption_charp(fb_face_cursive));
 	set(obj->STR_PA_Fantasy, MUIA_String_Contents, nsoption_charp(fb_face_fantasy));	
-		sprintf(cvar, "%d",  nsoption_int(font_size)/10);	
+		sprintf(cvar, "%d",  (nsoption_int(font_size)/10));	
 	set(obj->STR_Default, MUIA_String_Contents, cvar);
 		sprintf(cvar, "%d",  nsoption_int(font_min_size)/10);	
 	set(obj->STR_Minimum, MUIA_String_Contents, cvar);	
