@@ -17,6 +17,7 @@
  */
 
 #include <string.h>
+#include <stdbool.h>
 
 #include <cybergraphx/cybergraphics.h>
 #include <libraries/asl.h>
@@ -38,6 +39,10 @@
 #include "mui/mui.h"
 #include "mui/netsurf.h"
 #include "mui/utils.h"
+
+extern bool restart;
+extern bool reload_bw;
+int OpenPrefs(void);
 
 #include "utils/log2.h"
 
@@ -846,17 +851,47 @@ DEFTMETHOD(Application_About)
 	return 0;
 }
 
+DEFSMETHOD(Application_AddBookmark)
+{
+	LOG(("DEBUG: FUNCTION=%s", __FUNCTION__));
+	GETDATA;
+
+	if (!data->active_window || !data->active_window->winobj)
+	{
+		LOG(("DEBUG: No active window available for bookmark insertion"));
+		return 0;
+	}
+
+	return DoMethod(data->active_window->winobj, MM_Window_InsertBookmark);
+}
+
 DEFSMETHOD(Application_OpenWindow)
 {
 	LOG(("DEBUG: FUNCTION=%s", __FUNCTION__));
 	GETDATA;
-	APTR win = win;
+	APTR win = NULL;
 
 	switch (msg->window_id)
 	{
 		case WINDOW_SETTINGS:
-			win = data->prefswin;
-			break;
+			OpenPrefs();
+			if (reload_bw && data->active_window && data->active_window->winobj)
+			{
+				DoMethod(data->active_window->winobj, MM_Window_Navigate, NAV_RELOAD);
+			}
+			if (restart)
+			{
+				MUI_RequestA(obj,
+					data->active_window ? data->active_window->winobj : NULL,
+					0,
+					"NetSurf",
+					"_OK",
+					"Some changes require restarting NetSurf.",
+					NULL);
+			}
+			restart = false;
+			reload_bw = false;
+			return 0;
 
 		case WINDOW_DOWNLOADS:
 			win = data->dlwin;
@@ -867,7 +902,7 @@ DEFSMETHOD(Application_OpenWindow)
 			break;
 	}
 
-	return set(win, MUIA_Window_Open, TRUE);
+	return win ? set(win, MUIA_Window_Open, TRUE) : 0;
 }
 
 DEFSMETHOD(Application_NewWindow)
@@ -1124,6 +1159,7 @@ DECMMETHOD(Application_Load)
 DECSMETHOD(Application_About)
 DECSMETHOD(Application_AddBrowser)
 DECSMETHOD(Application_AskPasswordPDF)
+DECSMETHOD(Application_AddBookmark)
 DECSMETHOD(Application_CloseWindow)
 DECSMETHOD(Application_Download)
 DECSMETHOD(Application_DownloadDone)

@@ -33,6 +33,9 @@
 #include "libraries/mui.h"
 #include "utils/log2.h"
 
+extern int scale_cp;
+void mui_prefs_set_current_url(const char *url_string);
+
 #define APPLICATION_NAME "NetSurf"
 #define WINDOW_TITLE_FORMAT "NetSurf: %s"
 
@@ -266,12 +269,31 @@ DEFTMETHOD(Window_InsertBookmark)
 {
     GETDATA;
     LOG(("Inserting bookmark"));
-    STRPTR url = (STRPTR)getv(data->active_browser, MA_Browser_URL);
-    STRPTR title = (STRPTR)getv(data->active_browser, MA_Browser_Title);
-    if (!url || !title) {
-        LOG(("Invalid url=%p or title=%p for bookmark", url, title));
+    STRPTR url = NULL;
+    STRPTR title = NULL;
+
+    if (data->active_browser)
+    {
+        url = (STRPTR)getv(data->active_browser, MA_Browser_URL);
+        title = (STRPTR)getv(data->active_browser, MA_Browser_Title);
+    }
+
+    if ((!url || url[0] == '\0') && data->addressbar)
+    {
+        url = (STRPTR)getv(data->addressbar, MUIA_String_Contents);
+    }
+
+    if (!url || url[0] == '\0')
+    {
+        LOG(("No URL available for bookmark"));
         return 0;
     }
+
+    if (!title || title[0] == '\0')
+    {
+        title = url;
+    }
+
     return DoMethod(_app(obj), MM_HotlistWindow_Insert, title, url);
 }
 
@@ -317,8 +339,17 @@ DEFSMETHOD(Window_MenuAction)
             DoMethod(app, MUIM_Application_OpenConfigWindow, 0, NULL);
             break;
         case MNA_NETSURF_SETTINGS:
+        {
+            STRPTR active_url = NULL;
+            if (data->active_browser)
+            {
+                active_url = (STRPTR)getv(data->active_browser, MA_Browser_URL);
+            }
+            mui_prefs_set_current_url(active_url);
+            scale_cp = nsoption_int(scale);
             DoMethod(app, MM_Application_OpenWindow, WINDOW_SETTINGS);
             break;
+        }
         case MNA_NEW_PAGE:
             LOG(("Creating new page with homepage_url"));
             

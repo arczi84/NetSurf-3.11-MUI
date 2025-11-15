@@ -20,12 +20,16 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#include <proto/dos.h>
+#include <proto/wb.h>
 
 #include <string.h>
 
 #include "mui/extrasrc.h"
 #include "mui/gui.h"
 #include "mui/mui.h"
+
+extern struct Library *WorkbenchBase;
 
 struct Data
 {
@@ -195,6 +199,7 @@ DEFNEW
 		DoMethod(obj, MUIM_Notify, MUIA_Window_CloseRequest, TRUE, obj, 3, MUIM_Set, MUIA_Window_Open, FALSE);
 		DoMethod(rem_finished, MUIM_Notify, MUIA_Pressed, FALSE, obj, 3, MM_Download_RemoveEntry, lv_finished, 0);
 		DoMethod(rem_finished_all, MUIM_Notify, MUIA_Pressed, FALSE, obj, 3, MM_Download_RemoveEntry, lv_finished, 1);
+		DoMethod(lv_finished, MUIM_Notify, MUIA_Listview_DoubleClick, TRUE, obj, 2, MM_Download_OpenEntry, lv_finished);
 		DoMethod(rem_failed, MUIM_Notify, MUIA_Pressed, FALSE, obj, 3, MM_Download_RemoveEntry, lv_failed, 0);
 		DoMethod(rem_failed_all, MUIM_Notify, MUIA_Pressed, FALSE, obj, 3, MM_Download_RemoveEntry, lv_failed, 1);
 		//DoMethod(cancel,           MUIM_Notify, MUIA_Pressed, FALSE, obj, 3, MM_Download_Cancel, 0);
@@ -341,6 +346,31 @@ DEFSMETHOD(Download_RemoveEntry)
 	return 0;
 }
 
+DEFSMETHOD(Download_OpenEntry)
+{
+	struct download *dl = NULL;
+
+	DoMethod(msg->listview, MUIM_List_GetEntry, MUIV_List_GetEntry_Active, &dl);
+
+	if (dl && dl->path && dl->path[0])
+	{
+		if (WorkbenchBase == NULL)
+		{
+			WorkbenchBase = OpenLibrary("workbench.library", 37);
+		}
+
+		if (WorkbenchBase)
+		{
+			if (!OpenWorkbenchObjectA(dl->path, NULL))
+			{
+				DisplayBeep(NULL);
+			}
+		}
+	}
+
+	return 0;
+}
+
 DEFSMETHOD(Download_Cancel)
 {
 	GETDATA;
@@ -400,6 +430,7 @@ DECSMETHOD(Download_Cancelled)
 DECSMETHOD(Download_Done)
 DECSMETHOD(Download_Error)
 DECSMETHOD(Download_RemoveEntry)
+DECSMETHOD(Download_OpenEntry)
 DECMMETHOD(List_InsertSingle)
 DECMMETHOD(List_Redraw)
 ENDMTABLE

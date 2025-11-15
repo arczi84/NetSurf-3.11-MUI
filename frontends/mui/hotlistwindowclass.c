@@ -55,8 +55,8 @@ struct Data
 STATIC CONST TEXT header[] =
 {
 	"<!-- NetSurf Hotlist -->\n"
-	"<html><head><title>NetSurf Hotlist<title></head>\n"
-	"<body><b><p align=\"center\">NetSurf Hotlist</p></b>\n"
+	"<html><head><title>NetSurf Hotlist</title></head>\n"
+	"<body><p align=\"center\"><b>NetSurf Hotlist</b></p>\n"
 	"<hr>\n"
 };
 
@@ -80,6 +80,35 @@ static xmlNode *options_find_tree_element(xmlNode *node, const char *name)
 	}
 
 	return NULL;
+}
+
+static BOOL create_default_hotlist_file(void)
+{
+	BPTR fh = Open(APPLICATION_HOTLIST_FILE, MODE_NEWFILE);
+
+	if (!fh)
+		return FALSE;
+
+	FWrite(fh, (APTR)header, sizeof(header) - 1, 1);
+	FWrite(fh, (APTR)start, sizeof(start) - 1, 1);
+	FWrite(fh, (APTR)end, sizeof(end) - 1, 1);
+	FWrite(fh, (APTR)tail, sizeof(tail) - 1, 1);
+	Close(fh);
+
+	return TRUE;
+}
+
+static BOOL ensure_hotlist_storage(void)
+{
+	BPTR lock = Lock(APPLICATION_HOTLIST_FILE, ACCESS_READ);
+
+	if (lock)
+	{
+		UnLock(lock);
+		return TRUE;
+	}
+
+	return create_default_hotlist_file();
 }
 
 static void options_load_tree_directory(APTR obj, xmlNode *ul, struct MUIS_Listtree_TreeNode * node);
@@ -192,6 +221,9 @@ static void options_load_tree_directory(APTR obj, xmlNode *ul, struct MUIS_Listt
 
 static void options_load_tree(APTR obj, const char *filename)
 {
+	if (!ensure_hotlist_storage())
+		return;
+
 	BPTR fh = Open(APPLICATION_HOTLIST_FILE, MODE_OLDFILE);
 
 	if (fh)
@@ -331,6 +363,7 @@ STATIC VOID load_hotlist(struct Data *data)
 {
 	if (data->bookmarks == FALSE)
 	{
+		ensure_hotlist_storage();
 		data->bookmarks = TRUE;
 		options_load_tree(data->listtree, APPLICATION_HOTLIST_FILE);
 	}
@@ -388,8 +421,17 @@ DEFSMETHOD(HotlistWindow_Modify)
 	switch (msg->operation)
 	{
 		case BM_ADD_LINK:
+		{
+			IPTR inserted = DoMethod(_app(obj), MM_Application_AddBookmark);
+			if (inserted)
+			{
+				return 0;
+			}
+
 			set(data->location, MUIA_Disabled, FALSE);
 			flags = 0;
+			/* fall through for manual entry */
+		}
 		case BM_ADD_GROUP:
 			set(data->title, MUIA_Disabled, FALSE);
 

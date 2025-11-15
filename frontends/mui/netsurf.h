@@ -21,7 +21,7 @@
 
 #define APPLICATION_ENV_PREFS "ENV:MUI/NetSurf.config"
 #define APPLICATION_ENVARC_PREFS "ENVARC:MUI/NetSurf.config"
-#define APPLICATION_HOTLIST_FILE "PROGDIR:Hotlist.html"
+#define APPLICATION_HOTLIST_FILE "PROGDIR:Resources/Hotlist"
 #define APPLICATION_COOKIES_FILE "PROGDIR:Resources/Cookies"
 #define APPLICATION_RECENT_FILE  "PROGDIR:Resources/Recent"
 

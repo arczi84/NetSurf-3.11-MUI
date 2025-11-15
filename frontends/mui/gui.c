@@ -132,6 +132,7 @@ struct Library *JFIFBase;
 struct Library *TTEngineBase;
 #endif
 struct Library *IconBase;
+struct Library *WorkbenchBase;
 struct IntuitionBase *IntuitionBase;
 struct Library *SocketBase;
 struct Library *AsyncIOBase;
@@ -353,6 +354,10 @@ static void cleanup(void)
 		CloseLibrary(IconBase);
 		IconBase = NULL;
 	}
+	if (WorkbenchBase) {
+		CloseLibrary(WorkbenchBase);
+		WorkbenchBase = NULL;
+	}
 	if (CyberGfxBase) {
 		CloseLibrary(CyberGfxBase);
 		CyberGfxBase = NULL;
@@ -490,6 +495,11 @@ static LONG startup(void)
     LOG(("DEBUG: icon.library %s\n", IconBase ? "opened" : "FAILED to open"));
     if (!IconBase) goto cleanup;
 
+	// Open workbench.library for file launching
+	WorkbenchBase = OpenLibrary("workbench.library", 37);
+	LOG(("DEBUG: workbench.library %s\n", WorkbenchBase ? "opened" : "FAILED to open"));
+	if (!WorkbenchBase) goto cleanup;
+
     // Open intuition.library
     IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library", 36);
     LOG(("DEBUG: intuition.library %s\n", IntuitionBase ? "opened" : "FAILED to open"));
@@ -595,6 +605,7 @@ cleanup:
     if (SocketBase) CloseLibrary(SocketBase);
     if (IntuitionBase) CloseLibrary((struct Library *)IntuitionBase);
 	if (IconBase) CloseLibrary(IconBase);
+	if (WorkbenchBase) CloseLibrary(WorkbenchBase);
 #ifdef TTENGINE
 	if (TTEngineBase) CloseLibrary(TTEngineBase);
 #endif

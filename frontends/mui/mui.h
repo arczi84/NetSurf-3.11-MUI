@@ -84,7 +84,7 @@ DEFCLASS(historypopstring);
 DEFCLASS(addressbargroup);
 DEFCLASS(findtext);
 DEFCLASS(pdf);
-//DEFCLASS(hotlistwindow);
+DEFCLASS(hotlistwindow);
 DEFCLASS(downloadwindow);
 //DEFCLASS(loginwindow);
 DEFCLASS(quicklinkgroup);
@@ -112,6 +112,7 @@ enum
 	MM_Application_NewWindow,
 	MM_Application_OpenWindow,
 	MM_Application_PrefsSave,
+	MM_Application_AddBookmark,
 	MM_Application_SaveDocument,
 	MM_Application_SetPasswordPDF,
 	MA_Application_DownloadsInProgress,
@@ -151,6 +152,7 @@ enum
 	MM_Download_Done,
 	MM_Download_Error,
 	MM_Download_RemoveEntry,
+	MM_Download_OpenEntry,
 
 	MM_FindText_DisableButtons,
 
@@ -277,6 +279,7 @@ struct MP_Download_Cancelled         { ULONG MethodID; APTR entry; };
 struct MP_Download_Done              { ULONG MethodID; APTR entry; };
 struct MP_Download_Error             { ULONG MethodID; APTR entry; };
 struct MP_Download_RemoveEntry       { ULONG MethodID; APTR listview; LONG all; };
+struct MP_Download_OpenEntry         { ULONG MethodID; APTR listview; };
 
 struct MP_FindText_DisableButtons    { ULONG MethodID; LONG prev; LONG next; };
 struct MP_HistoryPopString_Insert    { ULONG MethodID; APTR item; };

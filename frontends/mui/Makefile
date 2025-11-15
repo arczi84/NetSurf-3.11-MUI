@@ -35,7 +35,7 @@ CFLAGS += -DTURBOJPEG
 
 CFLAGS +=	-I/mnt/e/usr/local/amiga/m68k-amigaos/clib/extra/ns-include
 #CFLAGS +=	-I/mnt/e/usr/local/amiga/m68k-amigaos/clib/extra/ns-include/turbojpeg
-CFLAGS +=	-Ifrontends -Ifrontends/mui/include -Ifrontends/mui/include-ns #-Inetsurf/include
+CFLAGS +=	-Ifrontends -Ifrontends/mui/include -Ifrontends/mui/include-ns -Ifrontends/mui/Prefs #-Inetsurf/include
 CFLAGS +=	-Iinclude 
 #-Icontent -Icontent/fetchers -Icontent/handlers
 
@@ -88,8 +88,9 @@ S_MUI := netsurf.c methodstack.c applicationclass.c browserclass.c historylistcl
 	schedule.c thumbnail.c bitmap.c font.c utf8.c login.c	\
   plotters.c save_pdf.c pdfclass.c print.c \
 	clipboard.c save_complete.c fetch.c findfile.c\
-	search.c utils.c mui.c throbber.c extrasrc.c \
-  loadpng.c
+  search.c utils.c mui.c throbber.c extrasrc.c \
+  loadpng.c \
+  Prefs/gui_options.c Prefs/gui_optionsInit.c Prefs/gui_locale.c
 S_MUI := $(addprefix frontends/mui/,$(S_MUI))
 
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_MUI) $(S_IMAGES) $(S_FONTS)
