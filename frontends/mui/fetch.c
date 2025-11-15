@@ -133,75 +133,71 @@ static bool ami_gui_check_resource(char *fullpath, const char *file)
 	return found;
 }
 
+static bool
+ami_try_language_dir(const char *lang, char *fullpath, size_t fullpath_len,
+	const char *file)
+{
+	int written;
+
+	if ((lang == NULL) || (lang[0] == '\0'))
+		return false;
+
+	written = snprintf(fullpath, fullpath_len,
+		"PROGDIR:Resources/%s/", lang);
+	if ((written < 0) || ((size_t)written >= fullpath_len))
+		return false;
+
+	return ami_gui_check_resource(fullpath, file);
+}
+
 bool ami_locate_resource(char *fullpath, const char *file)
 {
-	struct Locale *locale;
+	struct Locale *locale = NULL;
 	int i;
 	bool found = false;
-	char *remapped;
+	char *remapped = NULL;
 	size_t fullpath_len = 1024;
 
-	/* Check NetSurf user data area first */
+	locale = OpenLocale(NULL);
+	if (locale != NULL) {
+		for (i = 0; i < 7 && !found; i++) {
+			const char *pref = locale->loc_PrefLanguages[i];
 
-		strcpy(fullpath,"PROGDIR:Resources/");
-		found = ami_gui_check_resource(fullpath, file);
-
-		if(found) return true;
-
-	/* If not found, start on the user's preferred languages */
-	//bool accept_lang_locale = true;
-	//nsoption_setnull__bool(accept_lang_locale,true);
-#if 0	
-	//if (nsoption_bool(accept_lang_locale))
-		{
-	
-		locale = OpenLocale(NULL);
-		/*Open netsurf.catalog file*/
-	
-		for(i=0;i<7;i++) {
-			strcpy(fullpath,"PROGDIR:Resources/");
-
-			if(locale->loc_PrefLanguages[i])
-			{
-				ami_gui_map_filename(&remapped, "PROGDIR:Resources/",
-					locale->loc_PrefLanguages[i], "LangNames");
-				netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
-
-				found = ami_gui_check_resource(fullpath, file);
-				nsoption_set_charp(accept_language, strdup(remapped)); 
-			}else {
+			if ((pref == NULL) || (pref[0] == '\0'))
 				continue;
+
+			ami_gui_map_filename(&remapped, "PROGDIR:Resources/",
+				pref, "LangNames");
+			if (remapped == NULL)
+				continue;
+
+			found = ami_try_language_dir(remapped, fullpath, fullpath_len, file);
+			if (found && nsoption_bool(accept_lang_locale)) {
+				nsoption_set_charp(accept_language, strdup(remapped));
 			}
 
-			if(found) break;
+			free(remapped);
+			remapped = NULL;
 		}
-
-		if(!found) {
-			/* If not found yet, check in PROGDIR:Resources/en,
-			 * might not be in user's preferred languages */
-
-			strcpy(fullpath, "PROGDIR:Resources/en/");
-			found = ami_gui_check_resource(fullpath, file);
-		}
-
 		CloseLocale(locale);
-		}
-	else
-#endif	
-		{
-			strcpy(fullpath, "PROGDIR:Resources/");
-			strncat(fullpath, nsoption_charp(accept_language), 3);			
-			strcat(fullpath, "/");			
-			
-			found = ami_gui_check_resource(fullpath, file);
-		}
+	}
 
-	if(!found) {
-		/* Lastly check directly in PROGDIR:Resources */
+	if (!found && nsoption_charp(accept_language) != NULL &&
+	    nsoption_charp(accept_language)[0] != '\0') {
+		found = ami_try_language_dir(nsoption_charp(accept_language),
+			fullpath, fullpath_len, file);
+	}
 
-		strcpy(fullpath,"PROGDIR:Resources/en/");
+	/* Fall back to the default resources directory if nothing matched */
+	if (!found) {
+		strcpy(fullpath, "PROGDIR:Resources/");
 		found = ami_gui_check_resource(fullpath, file);
+	}
 
+	/* Final fallback to English */
+	if (!found) {
+		strcpy(fullpath, "PROGDIR:Resources/en/");
+		found = ami_gui_check_resource(fullpath, file);
 	}
 
 	return found;
