@@ -10,7 +10,7 @@
 
 /* Check MUI version */
 #ifndef MUIMASTER_VLATEST
-#define MUIMASTER_VLATEST 0
+//#define MUIMASTER_VLATEST 0
 #endif
 
 /* MUI 3.8 compatibility defines */
@@ -42,23 +42,116 @@
 
 /* PushMethod values */
 #ifndef MUIV_PushMethod_Delay
-/* MUI 3.8 doesn't support delayed methods, just return number of args without delay flag */
-#define MUIV_PushMethod_Delay(ms) (0)
+/* MUI 3.8 doesn't support delayed methods natively */
+void mui_queue_method_delay(Object *app, Object *obj, ULONG delay_ms, ULONG method_id);
+#else
+static inline void mui_queue_method_delay(Object *app, Object *obj, ULONG delay_ms, ULONG method_id)
+{
+    DoMethod(app,
+             MUIM_Application_PushMethod,
+             obj,
+             1 | MUIV_PushMethod_Delay(delay_ms),
+             method_id);
+}
 #endif
 
-/* Helper macro for delayed push method calls on MUI 3.8 */
-#define MUI_PUSH_METHOD_DELAYED(app, obj, numargs, method, ...) \
-    DoMethod((app), MUIM_Application_PushMethod, (obj), (numargs), (method), ##__VA_ARGS__)
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
+#ifndef MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
+/* Helper macro retained for legacy code */
+#define MUI_PUSH_METHOD_DELAYED(app, obj, delay_ms, method) \
+    mui_queue_method_delay((app), (obj), (delay_ms), (method))
 
 /* Textinput attributes */
 #ifndef MUIA_Textinput_ResetMarkOnCursor
 #define MUIA_Textinput_ResetMarkOnCursor 0x80429AB2UL /* Fake tag, will be ignored */
 #endif
 
+/* Pointer attributes and values (new in MUI4) */
+#ifndef MUIA_PointerType
+#define MUIA_PointerType 0x8042b467UL /* matches MUI4 tag, harmless on 3.8 */
+#endif
+
+#ifndef MUIV_PointerType_Normal
+#define MUIV_PointerType_Normal 0
+#endif
+
+#ifndef MUIV_PointerType_Link
+#define MUIV_PointerType_Link 13
+#endif
+
+#ifndef MUIV_PointerType_Text
+#define MUIV_PointerType_Text 30
+#endif
+
+#ifndef MUIV_PointerType_Cross
+#define MUIV_PointerType_Cross 7
+#endif
+
+#ifndef MUIV_PointerType_DragAndDrop
+#define MUIV_PointerType_DragAndDrop 8
+#endif
+
+#ifndef MUIV_PointerType_Busy
+#define MUIV_PointerType_Busy 1
+#endif
+
+#ifndef MUIV_PointerType_Help
+#define MUIV_PointerType_Help 12
+#endif
+
+#ifndef MUIV_PointerType_NoDrop
+#define MUIV_PointerType_NoDrop 15
+#endif
+
+#ifndef MUIV_PointerType_Progress
+#define MUIV_PointerType_Progress 24
+#endif
+
+#ifndef MUIV_PointerType_None
+#define MUIV_PointerType_None 16
+#endif
+
 /* Title class (doesn't exist in MUI 3.8) */
 #ifndef MUIC_Title
 #define MUIC_Title "Title.mui"
 #endif
+
+/* Some newer stock images are missing entirely on 3.8, provide best-effort fallbacks */
+#ifdef MUII_Close
+#undef MUII_Close
+#endif
+#define MUII_Close MUII_CheckMark
+
+#ifdef MUII_ButtonBack
+#undef MUII_ButtonBack
+#endif
+#define MUII_ButtonBack MUII_GroupBack
+
+#ifdef MUII_RequesterBack
+#undef MUII_RequesterBack
+#endif
+#define MUII_RequesterBack MUII_WindowBack
+
+#ifdef MUII_PopDrawer
+#undef MUII_PopDrawer
+#endif
+#define MUII_PopDrawer MUII_PopUp
+
+#ifdef MUII_PopUp
+#undef MUII_PopUp
+#endif
+#define MUII_PopUp MUII_PopFile
+
+#ifdef MUII_Network
+#undef MUII_Network
+#endif
+#define MUII_Network MUII_Assign
 
 /* List methods */
 #ifndef MUIM_List_Construct
@@ -96,6 +189,11 @@ struct MUIP_List_Display {
     APTR entry;
     STRPTR *array;
 };
+#endif
+
+/* File mode helper missing on some 3.8 SDKs */
+#if !defined(MODE_WRITE) && defined(MODE_NEWFILE)
+#define MODE_WRITE MODE_NEWFILE
 #endif
 
 #endif /* MUIMASTER_VLATEST < 20 */

@@ -57,7 +57,11 @@ DEFNEW
 		MUIA_Group_Horiz, TRUE,
 		Child, bt_close = ImageObject,
 			MUIA_InputMode, MUIV_InputMode_RelVerify,
+#if MUIMASTER_VLATEST < 20
+			MUIA_Image_Spec, MUII_CheckMark,
+#else
 			MUIA_Image_Spec, MUII_Close,
+#endif
 			MUIA_CycleChain, 1,
 		End,
 		Child, pop_search = NewObject(getpopstringclass(), NULL, TAG_DONE),

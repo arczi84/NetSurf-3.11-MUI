@@ -71,7 +71,11 @@ DEFNEW
 	LOG(("Creating close button"));
 	closebutton = ImageObject,
 		//MUIA_Image_Spec, MUII_CheckMark,
+#if MUIMASTER_VLATEST < 20
+		MUIA_Image_Spec, MUII_CheckMark,
+#else
 		MUIA_Image_Spec, MUII_Close,
+#endif
 		End;
 	if (!closebutton) {
 		LOG(("Failed to create closebutton"));

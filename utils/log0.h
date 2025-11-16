@@ -34,6 +34,7 @@ extern bool verbose_log;
  * This is provided by the frontends if required
  */
 typedef bool(nslog_ensure_t)(FILE *fptr);
+#define NSLOG_ENSURE_T_DEFINED
 
 void close_log_file(void);
 void set_log0_enabled(bool enabled);
@@ -92,6 +93,8 @@ NSLOG_DECLARE_CATEGORY(flex);
 NSLOG_DECLARE_CATEGORY(dukky);
 NSLOG_DECLARE_CATEGORY(jserrors);
 #else /* WITH_NSLOG */
+#ifndef NSLOG_LEVEL_ENUM_DEFINED
+#define NSLOG_LEVEL_ENUM_DEFINED
 enum nslog_level {
     NSLOG_LEVEL_DEEPDEBUG = 0,
     NSLOG_LEVEL_DEBUG = 1,
@@ -101,6 +104,7 @@ enum nslog_level {
     NSLOG_LEVEL_ERROR = 5,
     NSLOG_LEVEL_CRITICAL = 6
 };
+#endif
 
 // Declare categories as empty macros since we don't use nslog library
 #define NSLOG_DECLARE_CATEGORY(name)
@@ -141,6 +145,8 @@ extern void nslog_log(const char *file, const char *func, int ln, const char *fo
 #endif  /* WITH_NSLOG */
 
 #if 1
+#ifndef NSLOG_LOGPRINTF_DEFINED
+#define NSLOG_LOGPRINTF_DEFINED
 static void logprintf(const char *fmt, ...)
 {
     char buf[256];
@@ -152,6 +158,7 @@ static void logprintf(const char *fmt, ...)
     
     write_to_log("%s\n", buf);
 }
+#endif
 
 #if 1//0//def NDEBUG
 #  define LOG(x) ((void) 0)

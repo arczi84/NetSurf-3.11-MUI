@@ -16,40 +16,42 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef NETSURF_LOG_H
-#define NETSURF_LOG_H
+#ifndef NETSURF_LOG2_H
+#define NETSURF_LOG2_H
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdarg.h>
-#include <clib/debug_protos.h>
 #include "utils/errors.h"
 
 extern bool verbose_log;
 
 // File handle for logging
-static FILE *log_file = NULL;
+static FILE *mui_log_file = NULL;
 
 /**
  * Ensures the FILE handle is available to write logging to.
  *
  * This is provided by the frontends if required
  */
+#ifndef NSLOG_ENSURE_T_DEFINED
 typedef bool(nslog_ensure_t)(FILE *fptr);
+#define NSLOG_ENSURE_T_DEFINED
+#endif
 
 /**
  * Initialize log file
  */
-static void init_log_file(void) {
-    if (log_file == NULL) {
+static void mui_init_log_file(void) {
+    if (mui_log_file == NULL) {
 #ifdef nsmui
-        log_file = fopen("log-mui.txt", "a");
+        mui_log_file = fopen("log-mui.txt", "a");
 #else
 #warning compiling sdl version, using log-art.txt
-        log_file = fopen("log-art.txt", "a");      
+        mui_log_file = fopen("log-art.txt", "a");      
 #endif     
-        if (log_file == NULL) {
+        if (mui_log_file == NULL) {
             // Fallback to stderr if file can't be opened
-            log_file = stderr;
+            mui_log_file = stderr;
         }
     }
 }
@@ -58,15 +60,15 @@ static void init_log_file(void) {
 /**
  * Write to log file with automatic initialization
  */
-static void write_to_log(const char *format, ...) {
-    init_log_file();
+static void mui_log_write(const char *format, ...) {
+    mui_init_log_file();
     
     va_list args;
     va_start(args, format);
-    vfprintf(log_file, format, args);
+    vfprintf(mui_log_file, format, args);
     va_end(args);
     
-    fflush(log_file); // Ensure immediate write
+    fflush(mui_log_file); // Ensure immediate write
 }
 
 /**
@@ -122,6 +124,8 @@ NSLOG_DECLARE_CATEGORY(flex);
 NSLOG_DECLARE_CATEGORY(dukky);
 NSLOG_DECLARE_CATEGORY(jserrors);
 #else /* WITH_NSLOG */
+#ifndef NSLOG_LEVEL_ENUM_DEFINED
+#define NSLOG_LEVEL_ENUM_DEFINED
 enum nslog_level {
     NSLOG_LEVEL_DEEPDEBUG = 0,
     NSLOG_LEVEL_DEBUG = 1,
@@ -131,9 +135,12 @@ enum nslog_level {
     NSLOG_LEVEL_ERROR = 5,
     NSLOG_LEVEL_CRITICAL = 6
 };
+#endif
 
 // Declare categories as empty macros since we don't use nslog library
+#ifndef NSLOG_DECLARE_CATEGORY
 #define NSLOG_DECLARE_CATEGORY(name)
+#endif
 
 extern void nslog_log(const char *file, const char *func, int ln, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 
@@ -153,10 +160,10 @@ extern void nslog_log(const char *file, const char *func, int ln, const char *fo
 #define NSLOG(catname, level, logmsg, args...) \
     do { \
         if (NSLOG_LEVEL_##level >= NSLOG_COMPILED_MIN_LEVEL) { \
-            write_to_log("%s:%ld [%s][%s]: ", __FILE__, (long)__LINE__, #catname, #level); \
+            mui_log_write("%s:%ld [%s][%s]: ", __FILE__, (long)__LINE__, #catname, #level); \
             char __nslog_buf[256]; \
             snprintf(__nslog_buf, sizeof(__nslog_buf), logmsg, ##args); \
-            write_to_log("%s\n", __nslog_buf); \
+            mui_log_write("%s\n", __nslog_buf); \
         } \
     } while (0)
 #else
@@ -171,7 +178,7 @@ extern void nslog_log(const char *file, const char *func, int ln, const char *fo
 #endif  /* WITH_NSLOG */
 
 #if 1
-static void logprintf(const char *fmt, ...)
+static void mui_logprintf(const char *fmt, ...)
 {
     char buf[256];
     va_list args;
@@ -180,7 +187,7 @@ static void logprintf(const char *fmt, ...)
     vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
     
-    write_to_log("%s\n", buf);
+    mui_log_write("%s\n", buf);
 }
 
 #if 0//def NDEBUG
@@ -188,8 +195,8 @@ static void logprintf(const char *fmt, ...)
 #else
 #define LOG(x) \
     do { \
-        write_to_log("%s:%ld: ", __FILE__, (long)__LINE__); \
-        logprintf x; \
+        mui_log_write("%s:%ld: ", __FILE__, (long)__LINE__); \
+        mui_logprintf x; \
     } while (0)
 #endif
 #endif
@@ -197,17 +204,17 @@ static void logprintf(const char *fmt, ...)
 /**
  * Close log file
  */
-static void close_log_file(void) {
-    if (log_file != NULL && log_file != stderr) {
+static void mui_close_log_file(void) {
+    if (mui_log_file != NULL && mui_log_file != stderr) {
         LOG(("Closing log file\n"));
-        fclose(log_file);
-        log_file = NULL;
+        fclose(mui_log_file);
+        mui_log_file = NULL;
     }
 }
 
 // Add cleanup function to be called at program exit
-static void __attribute__((destructor)) cleanup_log(void) {
-    close_log_file();
+static void __attribute__((destructor)) mui_cleanup_log(void) {
+    mui_close_log_file();
 }
 
 #endif

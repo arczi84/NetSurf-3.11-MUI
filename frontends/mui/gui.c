@@ -1,8 +1,4 @@
 /*
- * Copyright 2009 Ilkka Lehtoranta <ilkleht@isoveli.org>
- *
- * This file is part of NetSurf, http://www.netsurf-browser.org/
- *
  * NetSurf is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
@@ -115,6 +111,7 @@ static bool cleanup_done = false;
 /* Forward declarations */
 static bool browser_reformat_pending = false;
 bool mui_redraw_pending = false;
+bool mui_supports_pointertype = false;
 
 static nserror gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bool scaled);
 static nserror gui_window_set_scroll_rect(struct gui_window *g, const struct rect *rect);
@@ -369,6 +366,7 @@ static void cleanup(void)
 	if (MUIMasterBase) {
 		CloseLibrary(MUIMasterBase);
 		MUIMasterBase = NULL;
+		mui_supports_pointertype = false;
 	}
 
 	if (UtilityBase) {
@@ -414,8 +412,11 @@ static LONG startup(void)
     // Open muimaster.library
 	MUIMasterBase = OpenLibrary("muimaster.library", 19);
     if (MUIMasterBase) {
-        LOG(("DEBUG: muimaster.library opened, version %ld.%ld\n", 
-             MUIMasterBase->lib_Version, MUIMasterBase->lib_Revision));
+		LOG(("DEBUG: muimaster.library opened, version %ld.%ld\n", 
+		     MUIMasterBase->lib_Version, MUIMasterBase->lib_Revision));
+		mui_supports_pointertype = (MUIMasterBase->lib_Version >= 20);
+		LOG(("DEBUG: Pointer type support %s\n",
+		     mui_supports_pointertype ? "ENABLED" : "DISABLED"));
     } else {
         LOG(("ERROR: Failed to open muimaster.library version 19+\n"));
     }
@@ -624,12 +625,6 @@ cleanup:
     return FALSE;
 }
 
-/**
- * Set option defaults for mui frontend
- *
- * @param defaults The option table to update.
- * @return error status.
- */
 static nserror set_defaults(struct nsoption_s *defaults)
 {
 
@@ -1157,8 +1152,11 @@ void gui_window_update_box(struct gui_window *g, const union content_msg_data *d
 
 static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
-	methodstack_push(g->obj, 3, OM_GET, MUIA_Virtgroup_Left, sx);
-	methodstack_push_imm(g->obj, 3, OM_GET, MUIA_Virtgroup_Top, sy);
+	IPTR tags[2];
+	methodstack_push(g->obj, 3, OM_GET, MUIA_Virtgroup_Left, &tags[0]);
+	methodstack_push_imm(g->obj, 3, OM_GET, MUIA_Virtgroup_Top, &tags[1]);
+	*sx = tags[0];
+	*sy = tags[1];
 	return true;
 }
 
@@ -1321,7 +1319,6 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
-
 	ULONG pointertype = POINTERTYPE_NORMAL;
 
 	LOG(("DEBUG: gui_window_set_pointer called with shape=%d", shape));
@@ -1379,15 +1376,20 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 	if (g->pointertype != pointertype) {
 		g->pointertype = pointertype;
+		if (!mui_supports_pointertype) {
+			return;
+		}
 		methodstack_push(g->obj, 3, MUIM_Set, MA_Browser_Pointer, pointertype);
 	}
-//	#endif
 }
 
 void gui_window_hide_pointer(struct gui_window *g)
 {
 	if (g->pointertype != POINTERTYPE_INVISIBLE) {
 		g->pointertype = POINTERTYPE_INVISIBLE;
+		if (!mui_supports_pointertype) {
+			return;
+		}
 		methodstack_push(g->obj, 3, MUIM_Set, MA_Browser_Pointer, POINTERTYPE_INVISIBLE);
 	}
 }

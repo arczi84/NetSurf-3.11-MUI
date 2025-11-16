@@ -18,8 +18,8 @@
 #include "amiga/utf8.h"
 
 extern struct Library *AslBase;
-
 extern struct Library *MUIMasterBase;
+extern struct IntuitionBase *IntuitionBase;
 
 BOOL InitPrefs(void);
 void Extra(struct ObjApp * obj);

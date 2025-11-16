@@ -11,8 +11,8 @@ struct nsurl;
 #define CATCOMP_ARRAY 1
 #define CATCOMP_BLOCK 1
 
-__inline Object * MUI_NewObject(CONST_STRPTR cl, Tag tags, ...);
-__inline Object * MUI_MakeObject(LONG type, ...);
+//__inline Object * MUI_NewObject(CONST_STRPTR cl, Tag tags, ...);
+//__inline Object * MUI_MakeObject(LONG type, ...);
 
 
 void Reload(struct Hook *h, Object *o);

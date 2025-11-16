@@ -40,7 +40,7 @@ CFLAGS +=	-Ifrontends -Ifrontends/mui/include -Ifrontends/mui/include-ns -Ifront
 CFLAGS +=	-Iinclude 
 
 LDFLAGS += -Llib -Llibs -L/mnt/e/usr/local/amiga/m68k-amigaos/clib/extra/ns-lib
-LDFLAGS += -lmui
+LDFLAGS += -lmui-3
 
 NETSURF_USE_FREETYPE2 := YES
 NETSURF_FEATURE_FREETYPE2_CFLAGS := -DFB_USE_FREETYPE
@@ -74,6 +74,7 @@ S_MUI := netsurf.c methodstack.c applicationclass.c browserclass.c historylistcl
   plotters.c save_pdf.c pdfclass.c print.c \
 	clipboard.c save_complete.c fetch.c findfile.c\
   search.c utils.c mui.c throbber.c extrasrc.c \
+	mui_delay.c \
   loadpng.c \
   Prefs/gui_options.c Prefs/gui_optionsInit.c Prefs/gui_locale.c
 S_MUI := $(addprefix frontends/mui/,$(S_MUI))

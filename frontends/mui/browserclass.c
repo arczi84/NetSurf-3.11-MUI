@@ -304,8 +304,7 @@ static void content_ready_callback(struct browser_window *bw, void *user_data)
         data->retry_count = 0;  // Reset retry counter
         
         // Wymuś ponowne renderowanie
-        DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
-                 1 | MUIV_PushMethod_Delay(50), MM_Browser_Redraw);
+    mui_queue_method_delay(_app(obj), obj, 50, MM_Browser_Redraw);
     }
 }
 
@@ -317,8 +316,7 @@ static void content_ready_callback(struct browser_window *bw, void *user_data)
     LOG(("DEBUG: Content ready event received"));
     if (data) {
         data->retry_count = 0;
-        DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
-                 1 | MUIV_PushMethod_Delay(10), MM_Browser_Redraw);
+    mui_queue_method_delay(_app(obj), obj, 10, MM_Browser_Redraw);
     }
 }
 
@@ -486,8 +484,7 @@ STATIC VOID render_content_to_bitmap(APTR obj, struct Data *data)
         data->retry_count++;
         
         if (data->retry_count < 100) {
-            DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
-                     1 | MUIV_PushMethod_Delay(50), MM_Browser_Redraw);
+            mui_queue_method_delay(_app(obj), obj, 50, MM_Browser_Redraw);
         } else {
             LOG(("DEBUG: Timeout waiting for content - giving up"));
             data->retry_count = 0;
@@ -501,8 +498,7 @@ STATIC VOID render_content_to_bitmap(APTR obj, struct Data *data)
         data->retry_count++;
         
         if (data->retry_count < 50) {
-            DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
-                     1 | MUIV_PushMethod_Delay(100), MM_Browser_Redraw);
+            mui_queue_method_delay(_app(obj), obj, 100, MM_Browser_Redraw);
         } else {
             LOG(("DEBUG: Content status timeout"));
             data->retry_count = 0;
@@ -642,9 +638,11 @@ STATIC VOID doset(APTR obj, struct Data *data, struct TagItem *tags)
             case MA_Browser_Pointer:
                 if (data->pointertype != tdata) {
                     data->pointertype = tdata;
-                    // Apply the pointer change via MUI
-                    LOG(("DEBUG: Setting pointer type to %ld", tdata));
-                    set(obj, MUIA_PointerType, tdata);
+                    if (mui_supports_pointertype) {
+                        // Apply the pointer change via MUI (only supported on MUI 4+)
+                        LOG(("DEBUG: Setting pointer type to %ld", tdata));
+                        set(obj, MUIA_PointerType, tdata);
+                    }
                 }
                 break;
 
@@ -847,7 +845,7 @@ DEFMMETHOD(Show)
 
         LOG(("DEBUG: Show successful, _win(obj) = %p, muiRenderInfo = %p", _win(obj), muiRenderInfo(obj)));
 
-        LOG(("DEBUG: Current offscreen bitmap: %p (%lux%lu)", data->bm, data->bm_width, data->bm_height));
+    LOG(("DEBUG: Current offscreen bitmap: %p (%lux%lu)", data->BitMap, data->bm_width, data->bm_height));
         LOG(("DEBUG: data->browser=%p, data->context=%p", data->browser, data->context));
 
         if (data->mwidth != mwidth || data->mheight != mheight) {
@@ -1390,8 +1388,7 @@ DEFTMETHOD(Browser_Redraw)
        
         // Zaplanuj kolejny Browser_Redraw za 100ms
         LOG(("DEBUG: Scheduling next Browser_Redraw in 100ms"));
-        DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
-                 1 | MUIV_PushMethod_Delay(50)/*| MUIF_PUSHMETHOD_SINGLE*/, MM_Browser_Redraw);
+    mui_queue_method_delay(_app(obj), obj, 50, MM_Browser_Redraw);
 //                 1 | MUIV_PushMethod_Delay(100), MM_Browser_Redraw);
         if (data->RastPort) {
             LOG(("DEBUG: Filling RastPort with white while waiting for content 2"));
@@ -1466,8 +1463,7 @@ DEFMMETHOD(Draw)
             if (!data->redraw_pending) {
                 data->redraw_pending = 1;
                 LOG(("DEBUG: Scheduling delayed redraw after scroll"));
-                DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
-                         1 | MUIV_PushMethod_Delay(12), MM_Browser_Redraw);  // 250ms delay
+                mui_queue_method_delay(_app(obj), obj, 250, MM_Browser_Redraw);
             }
         } else if (need_new_render) {
             data->changed = 0;
@@ -1505,8 +1501,7 @@ DEFTMETHOD(Browser_CheckContent)
     } else {
         LOG(("DEBUG: Still no content, checking again..."));
         // Sprawdź ponownie za chwilę
-        DoMethod(_app(obj), MUIM_Application_PushMethod, obj,
-                 1 | MUIV_PushMethod_Delay(100), MM_Browser_CheckContent);
+    mui_queue_method_delay(_app(obj), obj, 100, MM_Browser_CheckContent);
     }
     
     return 0;

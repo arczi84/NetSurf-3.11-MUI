@@ -28,6 +28,8 @@
 #include <libraries/mui.h>
 #endif
 
+#include "mui_compat.h"
+
 #ifndef PROTO_ALIB_H
 #include <proto/alib.h>
 #endif

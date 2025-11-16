@@ -77,6 +77,7 @@ void die(const char *error);
 
 // Eksportuj globalne zmienne i funkcje
 extern bool mui_redraw_pending;
+extern bool mui_supports_pointertype;
 void mui_schedule_redraw(struct Data *data, bool full_redraw);
 void mui_trigger_content_ready_redraw(Object *obj);
 
