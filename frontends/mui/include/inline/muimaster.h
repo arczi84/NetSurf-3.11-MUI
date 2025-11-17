@@ -1,477 +1,156 @@
 #ifndef _INLINE_MUIMASTER_H
 #define _INLINE_MUIMASTER_H
 
-#include <sys/cdefs.h>
-#include <inline/stubs.h>
-
-__BEGIN_DECLS
-
-#ifndef BASE_EXT_DECL
-#define BASE_EXT_DECL /*extern struct Library* MUIMasterBase;*/
-#endif
-#ifndef BASE_PAR_DECL
-#define BASE_PAR_DECL
-#define BASE_PAR_DECL0 void
-#endif
-#ifndef BASE_NAME
-#define BASE_NAME MUIMasterBase
+#ifndef __INLINE_MACROS_H
+#include <inline/macros.h>
 #endif
 
-extern struct Library* MUIMasterBase;
+#ifndef MUIMASTER_BASE_NAME
+#define MUIMASTER_BASE_NAME MUIMasterBase
+#endif
 
-  __inline
-APTR MUI_AllocAslRequest( BASE_PAR_DECL unsigned long type, struct TagItem *tagList)
+#define MUI_NewObjectA(cl, tags) \
+	LP2(0x1e, Object *, MUI_NewObjectA, CONST_STRPTR, cl, a0, struct TagItem *, tags, a1, \
+	, MUIMASTER_BASE_NAME)
 
+#ifndef NO_INLINE_STDARG
+__inline Object * MUI_NewObject(CONST_STRPTR cl, Tag tags, ...)
 {
-  BASE_EXT_DECL
-  register APTR res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register unsigned long d0 __asm("d0") = type;
-  register struct TagItem* a0 __asm("a0") = tagList;
-
-  __asm volatile ("jsr a6@(-0x30)"
-  : "=r" (res)
-  : "r" (a6), "r" (d0), "r" (a0)
-  : "d0","d1", "a0", "a1", "memory" );
-  return res;
+  return MUI_NewObjectA(cl, (struct TagItem *) &tags);
 }
 
-  APTR MUI_AllocAslRequestTags(ULONG type, Tag tag1, ...)
-{
- return(MUI_AllocAslRequest(type, (struct TagItem *) &tag1));
-}
+#endif
 
+#define MUI_DisposeObject(obj) \
+	LP1NR(0x24, MUI_DisposeObject, Object *, obj, a0, \
+	, MUIMASTER_BASE_NAME)
 
+#define MUI_RequestA(app, win, flags, title, gadgets, format, params) \
+	LP7(0x2a, LONG, MUI_RequestA, Object *, app, d0, Object *, win, d1, ULONG, flags, d2, CONST_STRPTR, title, a0, CONST_STRPTR, gadgets, a1, CONST_STRPTR, format, a2, APTR, params, a3, \
+	, MUIMASTER_BASE_NAME)
 
-__inline
-BOOL MUI_AslRequest( BASE_PAR_DECL APTR requester, struct TagItem *tagList)
-{
-  BASE_EXT_DECL
-  register BOOL res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register APTR a0 __asm("a0") = requester;
-  register struct TagItem* a1 __asm("a1") = tagList;
+#ifndef NO_INLINE_STDARG
+#define MUI_Request(app, win, flags, title, gadgets, format, tags...) \
+	({ULONG _tags[] = {tags}; MUI_RequestA((app), (win), (flags), (title), (gadgets), (format), (APTR) _tags);})
+#endif
 
-  __asm volatile ("
-  jsr a6@(-0x36)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (a1)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
-  BOOL MUI_AslRequestTags(APTR req, Tag tag1, ...)
-{
- return(MUI_AslRequest(req, (struct TagItem *) &tag1));
-}
+#define MUI_AllocAslRequest(type, tags) \
+	LP2(0x30, APTR, MUI_AllocAslRequest, ULONG, type, d0, struct TagItem *, tags, a0, \
+	, MUIMASTER_BASE_NAME)
 
+#ifndef NO_INLINE_STDARG
+#define MUI_AllocAslRequestTags(type, tags...) \
+	({ULONG _tags[] = {tags}; MUI_AllocAslRequest((type), (struct TagItem *) _tags);})
+#endif
 
+#define MUI_AslRequest(req, tags) \
+	LP2(0x36, BOOL, MUI_AslRequest, APTR, req, a0, struct TagItem *, tags, a1, \
+	, MUIMASTER_BASE_NAME)
 
+#ifndef NO_INLINE_STDARG
+#define MUI_AslRequestTags(req, tags...) \
+	({ULONG _tags[] = {tags}; MUI_AslRequest((req), (struct TagItem *) _tags);})
+#endif
 
-__inline
-struct MUI_CustomClass*
-MUI_CreateCustomClass( BASE_PAR_DECL struct Library *base, char *supername, struct MUI_CustomClass *supermcc, int datasize, APTR dispatcher)
-{
-  BASE_EXT_DECL
-  register struct MUI_CustomClass* res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct Library* a0 __asm("a0") = base;
-  register char* a1 __asm("a1") = supername;
-  register struct MUI_CustomClass* a2 __asm("a2") = supermcc;
-  register int d0 __asm("d0") = datasize;
-  register APTR a3 __asm("a3") = dispatcher;
+#define MUI_FreeAslRequest(req) \
+	LP1NR(0x3c, MUI_FreeAslRequest, APTR, req, a0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x6c)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (a1), "r" (a2), "r" (d0), "r" (a3)
-  : "d0", "d1", "a0", "a1", "a2", "a3" );
-  return res;
-}
-  __inline
-BOOL MUI_DeleteCustomClass( BASE_PAR_DECL struct MUI_CustomClass* mcc)
-{
-  BASE_EXT_DECL
-  register BOOL res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct MUI_CustomClass* a0 __asm("a0") = mcc;
+#define MUI_Error() \
+	LP0(0x42, LONG, MUI_Error, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x72)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
-  __inline void MUI_DisposeObject( BASE_PAR_DECL Object *obj)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register Object* a0 __asm("a0") = obj;
+#define MUI_SetError(errnum) \
+	LP1(0x48, LONG, MUI_SetError, LONG, errnum, d0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x24)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0)
-  : "d0", "d1", "a0", "a1" );
-}
-  __inline LONG MUI_Error( BASE_PAR_DECL0 )
-{
-  BASE_EXT_DECL
-  register LONG res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
+#define MUI_GetClass(name) \
+	LP1(0x4e, struct IClass *, MUI_GetClass, CONST_STRPTR, name, a0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x42)"
-  : "=r" (res)
-  : "r" (a6)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
-  __inline void MUI_FreeAslRequest( BASE_PAR_DECL APTR requester)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register APTR a0 __asm("a0") = requester;
+#define MUI_FreeClass(cl) \
+	LP1NR(0x54, MUI_FreeClass, struct IClass *, cl, a0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x3c)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0)
-  : "d0", "d1", "a0", "a1" );
-}
-  __inline void MUI_FreeClass( BASE_PAR_DECL struct IClass *classptr)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct IClass* a0 __asm("a0")=classptr;
+#define MUI_RequestIDCMP(obj, flags) \
+	LP2NR(0x5a, MUI_RequestIDCMP, Object *, obj, a0, ULONG, flags, d0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x54)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0)
-  : "d0", "d1", "a0", "a1" );
-}
-  __inline struct IClass* MUI_GetClass( BASE_PAR_DECL char *classname)
-{
-  BASE_EXT_DECL
-  register struct IClass* res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register char* a0 __asm("a0")=classname;
+#define MUI_RejectIDCMP(obj, flags) \
+	LP2NR(0x60, MUI_RejectIDCMP, Object *, obj, a0, ULONG, flags, d0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x4e)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
-  __inline Object* MUI_MakeObjectA( BASE_PAR_DECL LONG type, ULONG *params)
-{
-  BASE_EXT_DECL
-  register Object* res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register LONG d0 __asm("d0")=type;
-  register ULONG* a0 __asm("a0")=params;
+#define MUI_Redraw(obj, flags) \
+	LP2NR(0x66, MUI_Redraw, Object *, obj, a0, ULONG, flags, d0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x78)"
-  : "=r" (res)
-  : "r" (a6), "r" (d0), "r" (a0)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
+#define MUI_CreateCustomClass(base, supername, supermcc, datasize, dispatcher) \
+	LP5(0x6c, struct MUI_CustomClass *, MUI_CreateCustomClass, struct Library *, base, a0, CONST_STRPTR, supername, a1, struct MUI_CustomClass *, supermcc, a2, ULONG, datasize, d0, APTR, dispatcher, a3, \
+	, MUIMASTER_BASE_NAME)
 
-  Object *MUI_MakeObject(LONG type, ...)
-{
-  return(MUI_MakeObjectA(type, (ULONG *)(((ULONG)&type)+4)));
-}
+#define MUI_DeleteCustomClass(mcc) \
+	LP1(0x72, BOOL, MUI_DeleteCustomClass, struct MUI_CustomClass *, mcc, a0, \
+	, MUIMASTER_BASE_NAME)
 
-  __inline Object* MUI_NewObjectA( BASE_PAR_DECL char *classname, struct TagItem *tags)
-{
-  BASE_EXT_DECL
-  register Object* res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register char* a0 __asm("a0") = classname;
-  register struct TagItem* a1 __asm("a1")=tags;
+#define MUI_MakeObjectA(type, params) \
+	LP2(0x78, Object *, MUI_MakeObjectA, LONG, type, d0, ULONG *, params, a0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x1e)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (a1)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
-  Object* MUI_NewObject(char *classname, Tag tag1, ...)
-{
- return(MUI_NewObjectA(classname, (struct TagItem *) &tag1));
-}
+#ifndef NO_INLINE_STDARG
+#define MUI_MakeObject(type, tags...) \
+	({ULONG _tags[] = {tags}; MUI_MakeObjectA((type), (ULONG *) _tags);})
+#endif
 
+#define MUI_Layout(obj, l, t, w, h, flags) \
+	LP6(0x7e, BOOL, MUI_Layout, Object *, obj, a0, LONG, l, d0, LONG, t, d1, LONG, w, d2, LONG, h, d3, ULONG, flags, d4, \
+	, MUIMASTER_BASE_NAME)
 
-  __inline void MUI_Redraw( BASE_PAR_DECL Object *obj, ULONG flags)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register Object * a0 __asm("a0")=obj;
-  register ULONG d0 __asm("d0")=flags;
+#define MUI_ObtainPen(mri, spec, flags) \
+	LP3(0x9c, LONG, MUI_ObtainPen, struct MUI_RenderInfo *, mri, a0, const struct MUI_PenSpec *, spec, a1, ULONG, flags, d0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x66)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (d0)
-  : "d0", "d1", "a0", "a1" );
-}
-  __inline void MUI_RejectIDCMP( BASE_PAR_DECL Object *obj, ULONG flags)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register Object* a0 __asm("a0")=obj;
-  register ULONG  d0 __asm("d0")=flags;
+#define MUI_ReleasePen(mri, pen) \
+	LP2NR(0xa2, MUI_ReleasePen, struct MUI_RenderInfo *, mri, a0, LONG, pen, d0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x60)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (d0)
-  : "d0", "d1", "a0", "a1" );
-}
-  __inline LONG MUI_RequestA( BASE_PAR_DECL APTR app, APTR win,
-LONGBITS flags, char *title,char *gadgets,char *format,APTR params)
-{
-  BASE_EXT_DECL
-  register LONG res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register APTR d0 __asm("d0")=app;
-  register APTR d1 __asm("d1")=win;
-  register LONGBITS d2 __asm("d2")=flags;
-  register char * a0 __asm("a0")=title;
-  register char * a1 __asm("a1")=gadgets;
-  register char * a2 __asm("a2")=format;
-  register APTR  a3 __asm("a3")=params;
+#define MUI_AddClipping(mri, l, t, w, h) \
+	LP5(0xa8, APTR, MUI_AddClipping, struct MUI_RenderInfo *, mri, a0, WORD, l, d0, WORD, t, d1, WORD, w, d2, WORD, h, d3, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x2a)"
-  : "=r" (res)
-  : "r" (a6), "r" (d0), "r" (d1), "r" (d2), "r" (a0), "r" (a1), "r" (a2), "r" (a3)
-  : "d0", "d1", "a0", "a1", "d2", "a2", "a3" );
-  return res;
-}
+#define MUI_RemoveClipping(mri, handle) \
+	LP2NR(0xae, MUI_RemoveClipping, struct MUI_RenderInfo *, mri, a0, APTR, handle, a1, \
+	, MUIMASTER_BASE_NAME)
 
-  LONG MUI_Request(APTR app, APTR win, LONGBITS flags, char *title, char *gadgets, char *format, ...)
-{
- return(MUI_RequestA(app, win, flags, title, gadgets, format, (APTR) (((ULONG)&format)+4) ));
-}
+#define MUI_AddClipRegion(mri, region) \
+	LP2(0xb4, APTR, MUI_AddClipRegion, struct MUI_RenderInfo *, mri, a0, struct Region *, region, a1, \
+	, MUIMASTER_BASE_NAME)
 
+#define MUI_RemoveClipRegion(mri, handle) \
+	LP2NR(0xba, MUI_RemoveClipRegion, struct MUI_RenderInfo *, mri, a0, APTR, handle, a1, \
+	, MUIMASTER_BASE_NAME)
 
+#define MUI_BeginRefresh(mri, flags) \
+	LP2(0xc0, BOOL, MUI_BeginRefresh, struct MUI_RenderInfo *, mri, a0, ULONG, flags, d0, \
+	, MUIMASTER_BASE_NAME)
 
+#define MUI_EndRefresh(mri, flags) \
+	LP2NR(0xc6, MUI_EndRefresh, struct MUI_RenderInfo *, mri, a0, ULONG, flags, d0, \
+	, MUIMASTER_BASE_NAME)
 
-  __inline void MUI_RequestIDCMP( BASE_PAR_DECL Object *obj, ULONG flags)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register Object * a0 __asm("a0")=obj;
-  register ULONG  d0 __asm("d0")=flags;
+#define MUI_Show(obj) \
+	LP1(0xd8, ULONG, MUI_Show, Object *, obj, a0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x5a)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (d0)
-  : "d0", "d1", "a0", "a1" );
-}
-  __inline LONG MUI_SetError( BASE_PAR_DECL LONG num)
-{
-  BASE_EXT_DECL
-  register LONG res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register LONG d0 __asm("d0")=num;
+#define MUI_Hide(obj) \
+	LP1(0xde, ULONG, MUI_Hide, Object *, obj, a0, \
+	, MUIMASTER_BASE_NAME)
 
-  __asm volatile ("
-  jsr a6@(-0x48)"
-  : "=r" (res)
-  : "r" (a6), "r" (d0)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
+#define MUI_LayoutObj(obj, l, t, w, h, flags) \
+	LP6(0xe4, BOOL, MUI_LayoutObj, Object *, obj, a0, LONG, l, d0, LONG, t, d1, LONG, w, d2, LONG, h, d3, ULONG, flags, d4, \
+	, MUIMASTER_BASE_NAME)
 
+#define MUI_Offset(obj, x, y) \
+	LP3NR(0xea, MUI_Offset, Object *, obj, a0, LONG, x, d0, LONG, y, d1, \
+	, MUIMASTER_BASE_NAME)
 
-
-
-
-__inline
-APTR MUI_AddClipping( BASE_PAR_DECL struct MUI_RenderInfo *mri, WORD left,WORD
-top,WORD width,WORD height)
-{
-  BASE_EXT_DECL
-  register APTR res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct MUI_RenderInfo* a0 __asm("a0") = mri;
-  register WORD d0 __asm("d0") = left;
-  register WORD d1 __asm("d1") = top;
-  register WORD d2 __asm("d2") = width;
-  register WORD d3 __asm("d3") = height;
-
-  __asm volatile ("
-  jsr a6@(-0xa8)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (d0), "r" (d1), "r" (d2), "r" (d3)
-  : "d0", "d1", "d2", "d3", "a0", "a1" );
-  return res;
-}
-
-__inline
-void MUI_RemoveClipping( BASE_PAR_DECL struct MUI_RenderInfo *mri, APTR handle)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct MUI_RenderInfo* a0 __asm("a0") = mri;
-  register APTR a1 __asm("a1") = handle;
-
-  __asm volatile ("
-  jsr a6@(-0xae)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (a1)
-  : "d0", "d1", "a0", "a1" );
-}
-
-__inline
-APTR MUI_AddClipRegion( BASE_PAR_DECL struct MUI_RenderInfo *mri, struct 
-Region *r)
-{
-  BASE_EXT_DECL
-  register APTR res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct MUI_RenderInfo* a0 __asm("a0") = mri;
-  register struct Region * a1 __asm("a1") = r;
-
-  __asm volatile ("
-  jsr a6@(-0xb4)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (a1)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
-
-__inline
-void MUI_RemoveClipRegion( BASE_PAR_DECL struct MUI_RenderInfo *mri, APTR 
-handle)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct MUI_RenderInfo* a0 __asm("a0") = mri;
-  register APTR a1 __asm("a1") = handle;
-
-  __asm volatile ("
-  jsr a6@(-0xba)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (a1)
-  : "d0", "d1", "a0", "a1" );
-}
-
-__inline
-BOOL MUI_BeginRefresh( BASE_PAR_DECL struct MUI_RenderInfo *mri, ULONG flags)
-{
-  BASE_EXT_DECL
-  register BOOL res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct MUI_RenderInfo* a0 __asm("a0") = mri;
-  register ULONG d0 __asm("d0") = flags;
-
-  __asm volatile ("
-  jsr a6@(-0xc0)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (d0)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
-
-__inline
-void MUI_EndRefresh( BASE_PAR_DECL struct MUI_RenderInfo *mri, ULONG flags)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct MUI_RenderInfo* a0 __asm("a0") = mri;
-  register ULONG d0 __asm("d0") = flags;
-
-  __asm volatile ("
-  jsr a6@(-0xc6)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (d0)
-  : "d0", "d1", "a0", "a1" );
-}
-
-__inline
-LONG MUI_ObtainPen( BASE_PAR_DECL struct MUI_RenderInfo *mri, struct 
-MUI_PenSpec *spec,ULONG flags)
-{
-  BASE_EXT_DECL
-  register LONG res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct MUI_RenderInfo* a0 __asm("a0") = mri;
-  register struct MUI_PenSpec * a1 __asm("a1") = spec;
-  register ULONG d0 __asm("d0") = flags;
-
-  __asm volatile ("
-  jsr a6@(-0x9c)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (a1), "r" (d0)
-  : "d0", "d1", "a0", "a1" );
-  return res;
-}
-
-__inline
-void MUI_ReleasePen( BASE_PAR_DECL struct MUI_RenderInfo *mri, LONG pen)
-{
-  BASE_EXT_DECL
-  register res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register struct MUI_RenderInfo* a0 __asm("a0") = mri;
-  register LONG d0 __asm("d0") = pen;
-
-  __asm volatile ("
-  jsr a6@(-0xa2)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (d0)
-  : "d0", "d1", "a0", "a1" );
-}
-
-__inline
-BOOL MUI_Layout( BASE_PAR_DECL Object *obj,LONG left,LONG top,LONG width,LONG 
-height,ULONG flags)
-{
-  BASE_EXT_DECL
-  register BOOL res __asm("d0");
-  register struct Library* a6 __asm("a6") = BASE_NAME;
-  register Object * a0 __asm("a0") = obj;
-  register LONG d0 __asm("d0") = left;
-  register LONG d1 __asm("d1") = top;
-  register LONG d2 __asm("d2") = width;
-  register LONG d3 __asm("d3") = height;
-  register ULONG d4 __asm("d4") = flags;
-
-  __asm volatile ("
-  jsr a6@(-0x7e)"
-  : "=r" (res)
-  : "r" (a6), "r" (a0), "r" (d0), "r" (d1), "r" (d2), "r" (d3), "r" (d4)
-  : "d0", "d1", "d2", "d3", "d4", "a0", "a1" );
-  return res;
-}
-
-
-
-#undef BASE_EXT_DECL
-#undef BASE_PAR_DECL
-#undef BASE_PAR_DECL0
-#undef BASE_NAME
-
-__END_DECLS
-
-#endif /* _INLINE_MUIMASTER_H */
-
-
+#endif /*  _INLINE_MUIMASTER_H  */

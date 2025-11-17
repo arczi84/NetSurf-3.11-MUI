@@ -22,6 +22,7 @@
 #include <devices/timer.h>
 #include <intuition/pointerclass.h>
 #include <workbench/startup.h>
+#include <dos/dos.h>
 #include <proto/asyncio.h>
 #include <proto/codesets.h>
 #include <proto/cybergraphics.h>
@@ -39,6 +40,14 @@
 #include <proto/utility.h>
 #include <proto/keymap.h>
 #include <proto/diskfont.h>
+
+#ifndef MODE_WRITE
+#ifdef MODE_NEWFILE
+#define MODE_WRITE MODE_NEWFILE
+#else
+#define MODE_WRITE 1006
+#endif
+#endif
 
 #include "netsurf/types.h"
 #include "content/urldb.h"
@@ -101,7 +110,6 @@
 bool netsurf_quit = false;
 extern struct plotter_table plot;
 extern struct gui_utf8_table *amiga_utf8_table;
-//struct gui_download_table *amiga_download_table = &download_table;
 
 #define kprintf
 
@@ -112,6 +120,7 @@ static bool cleanup_done = false;
 static bool browser_reformat_pending = false;
 bool mui_redraw_pending = false;
 bool mui_supports_pointertype = false;
+bool mui_supports_pushmethod_delay = false;
 
 static nserror gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bool scaled);
 static nserror gui_window_set_scroll_rect(struct gui_window *g, const struct rect *rect);
@@ -367,6 +376,7 @@ static void cleanup(void)
 		CloseLibrary(MUIMasterBase);
 		MUIMasterBase = NULL;
 		mui_supports_pointertype = false;
+		mui_supports_pushmethod_delay = false;
 	}
 
 	if (UtilityBase) {
@@ -415,8 +425,15 @@ static LONG startup(void)
 		LOG(("DEBUG: muimaster.library opened, version %ld.%ld\n", 
 		     MUIMasterBase->lib_Version, MUIMasterBase->lib_Revision));
 		mui_supports_pointertype = (MUIMasterBase->lib_Version >= 20);
+#ifdef MUIV_PushMethod_Delay
+		mui_supports_pushmethod_delay = (MUIMasterBase->lib_Version >= 20);
+#else
+		mui_supports_pushmethod_delay = false;
+#endif
 		LOG(("DEBUG: Pointer type support %s\n",
 		     mui_supports_pointertype ? "ENABLED" : "DISABLED"));
+		LOG(("DEBUG: PushMethod delay support %s\n",
+		     mui_supports_pushmethod_delay ? "ENABLED" : "DISABLED"));
     } else {
         LOG(("ERROR: Failed to open muimaster.library version 19+\n"));
     }

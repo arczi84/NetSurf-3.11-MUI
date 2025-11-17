@@ -39,7 +39,7 @@ STATIC CONST CONST_STRPTR entries[] =
 
 STATIC CONST CONST_STRPTR template[] =
 {
-	"http://www.google.com/search?q=%s",
+	"https://www.google.com/search?q=%s",
 	"http://www.aminet.net/search.php?query=%s",
 };
 

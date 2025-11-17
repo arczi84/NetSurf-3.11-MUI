@@ -20,6 +20,8 @@
 
 
 
+#include <stdbool.h>
+
 #ifndef SYS_PARAM_H
 #include <sys/param.h>
 #endif
@@ -62,6 +64,7 @@ ULONG classes_init(void);
 void classes_cleanup(void);
 
 extern APTR application;
+extern bool mui_supports_pushmethod_delay;
 
 /************************************************************/
 

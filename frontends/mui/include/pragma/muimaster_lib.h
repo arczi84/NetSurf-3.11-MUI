@@ -39,6 +39,10 @@ extern "C" {
 #pragma amicall(MUIMasterBase,0xba,MUI_RemoveClipRegion(a0,a1))
 #pragma amicall(MUIMasterBase,0xc0,MUI_BeginRefresh(a0,d0))
 #pragma amicall(MUIMasterBase,0xc6,MUI_EndRefresh(a0,d0))
+#pragma amicall(MUIMasterBase,0xd8,MUI_Show(a0))
+#pragma amicall(MUIMasterBase,0xde,MUI_Hide(a0))
+#pragma amicall(MUIMasterBase,0xe4,MUI_LayoutObj(a0,d0,d1,d2,d3,d4))
+#pragma amicall(MUIMasterBase,0xea,MUI_Offset(a0,d0,d1))
 
 #ifdef __cplusplus
 }

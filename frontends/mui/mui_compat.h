@@ -10,8 +10,27 @@
 
 /* Check MUI version */
 #ifndef MUIMASTER_VLATEST
-//#define MUIMASTER_VLATEST 0
+#ifdef MUIV_PushMethod_Delay
+#define MUIMASTER_VLATEST 20
+#else
+#define MUIMASTER_VLATEST 0
 #endif
+#endif
+
+/* PushMethod helper always available */
+void mui_queue_method_delay(Object *app, Object *obj, ULONG delay_ms, ULONG method_id);
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
+#ifndef MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
+/* Helper macro retained for legacy code */
+#define MUI_PUSH_METHOD_DELAYED(app, obj, delay_ms, method) \
+    mui_queue_method_delay((app), (obj), (delay_ms), (method))
 
 /* MUI 3.8 compatibility defines */
 #if MUIMASTER_VLATEST < 20
@@ -39,33 +58,6 @@
 #ifndef MUIA_Application_UsedClasses
 #define MUIA_Application_UsedClasses 0x8042E9A7UL /* Fake tag, will be ignored */
 #endif
-
-/* PushMethod values */
-#ifndef MUIV_PushMethod_Delay
-/* MUI 3.8 doesn't support delayed methods natively */
-void mui_queue_method_delay(Object *app, Object *obj, ULONG delay_ms, ULONG method_id);
-#else
-static inline void mui_queue_method_delay(Object *app, Object *obj, ULONG delay_ms, ULONG method_id)
-{
-    DoMethod(app,
-             MUIM_Application_PushMethod,
-             obj,
-             1 | MUIV_PushMethod_Delay(delay_ms),
-             method_id);
-}
-#endif
-
-#ifndef MIN
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#endif
-
-#ifndef MAX
-#define MAX(a,b) (((a)>(b))?(a):(b))
-#endif
-
-/* Helper macro retained for legacy code */
-#define MUI_PUSH_METHOD_DELAYED(app, obj, delay_ms, method) \
-    mui_queue_method_delay((app), (obj), (delay_ms), (method))
 
 /* Textinput attributes */
 #ifndef MUIA_Textinput_ResetMarkOnCursor

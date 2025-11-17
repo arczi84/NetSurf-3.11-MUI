@@ -37,10 +37,10 @@ CFLAGS += -DTURBOJPEG
 CFLAGS +=	-I/mnt/e/usr/local/amiga/m68k-amigaos/clib/extra/ns-include
 #CFLAGS +=	-I/mnt/e/usr/local/amiga/m68k-amigaos/clib/extra/ns-include/turbojpeg
 CFLAGS +=	-Ifrontends -Ifrontends/mui/include -Ifrontends/mui/include-ns -Ifrontends/mui/Prefs #-Inetsurf/include
-CFLAGS +=	-Iinclude 
+CFLAGS +=	-Iinclude -Ifrontends/mui/include-extra
 
 LDFLAGS += -Llib -Llibs -L/mnt/e/usr/local/amiga/m68k-amigaos/clib/extra/ns-lib
-LDFLAGS += -lmui-3
+LDFLAGS += -lmui-5
 
 NETSURF_USE_FREETYPE2 := YES
 NETSURF_FEATURE_FREETYPE2_CFLAGS := -DFB_USE_FREETYPE

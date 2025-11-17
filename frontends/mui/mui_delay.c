@@ -2,8 +2,6 @@
 #include "mui/schedule.h"
 #include "utils/log0.h"
 
-#if !defined(MUIV_PushMethod_Delay)
-
 #include <proto/exec.h>
 
 struct mui_delayed_method_ctx {
@@ -39,6 +37,17 @@ void mui_queue_method_delay(Object *app, Object *obj, ULONG delay_ms, ULONG meth
         return;
     }
 
+#ifdef MUIV_PushMethod_Delay
+    if (mui_supports_pushmethod_delay) {
+        DoMethod(app,
+                 MUIM_Application_PushMethod,
+                 obj,
+                 1 | MUIV_PushMethod_Delay(delay_ms),
+                 method_id);
+        return;
+    }
+#endif
+
     if (delay_ms == 0) {
         DoMethod(app, MUIM_Application_PushMethod, obj, 1, method_id);
         return;
@@ -65,5 +74,3 @@ void mui_queue_method_delay(Object *app, Object *obj, ULONG delay_ms, ULONG meth
         DoMethod(app, MUIM_Application_PushMethod, obj, 1, method_id);
     }
 }
-
-#endif
